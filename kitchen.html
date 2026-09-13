@@ -3,450 +3,1181 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>🏠 我的厨房 - 电子宠物</title>
+<title>🏠 Kitchen Pet - 厨房电子宠物</title>
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
-body{background:#2a2a2a;display:flex;justify-content:center;align-items:center;min-height:100vh;font-family:'Segoe UI','PingFang SC',sans-serif;overflow:hidden}
-.game-container{position:relative;width:900px;height:1200px;border-radius:16px;overflow:hidden;box-shadow:0 20px 60px rgba(0,0,0,0.4)}
-.game-container img.bg{width:100%;height:100%;object-fit:cover;display:block}
-
-/* 可交互区域 */
-.hotspot{
-  position:absolute;
-  cursor:pointer;
-  border:2px solid transparent;
-  border-radius:12px;
-  transition:all 0.3s ease;
-  z-index:10;
-}
-.hotspot:hover{
-  border-color:rgba(168,216,200,0.7);
-  background:rgba(168,216,200,0.12);
-  box-shadow:0 0 20px rgba(168,216,200,0.3);
-  transform:scale(1.02);
-}
-.hotspot:active{
-  transform:scale(0.98);
-  background:rgba(168,216,200,0.25);
-}
-.hotspot .label{
-  position:absolute;
-  bottom:-28px;
-  left:50%;
-  transform:translateX(-50%);
-  background:rgba(0,0,0,0.7);
-  color:#fff;
-  padding:3px 10px;
-  border-radius:10px;
-  font-size:12px;
-  white-space:nowrap;
-  opacity:0;
-  transition:opacity 0.3s;
-  pointer-events:none;
-}
-.hotspot:hover .label{opacity:1}
-
-/* 宠物 */
-.pet{
-  position:absolute;
-  z-index:20;
-  transition:left 0.8s cubic-bezier(.4,0,.2,1), top 0.8s cubic-bezier(.4,0,.2,1);
-  filter:drop-shadow(0 4px 8px rgba(0,0,0,0.3));
-  cursor:pointer;
-  user-select:none;
-}
-.pet .body{
-  width:48px;height:48px;
-  background:radial-gradient(circle at 35% 35%,#FFD6A0,#F0A050);
-  border-radius:50%;
-  position:relative;
-  animation:bob 2s ease-in-out infinite;
-}
-.pet .ear-l,.pet .ear-r{
-  position:absolute;width:14px;height:18px;
-  background:#F0A050;
-  border-radius:50% 50% 0 0;
-  top:-10px;
-}
-.pet .ear-l{left:4px;transform:rotate(-15deg)}
-.pet .ear-r{right:4px;transform:rotate(15deg)}
-.pet .ear-inner{
-  width:8px;height:10px;
-  background:#FFB870;
-  border-radius:50% 50% 0 0;
-  margin:4px auto 0;
-}
-.pet .eye{
-  position:absolute;width:7px;height:8px;
-  background:#333;border-radius:50%;
-  top:16px;
-}
-.pet .eye-l{left:13px}
-.pet .eye-r{right:13px}
-.pet .eye-shine{
-  width:3px;height:3px;background:#fff;border-radius:50%;
-  position:absolute;top:1px;left:1px;
-}
-.pet .mouth{
-  position:absolute;
-  width:10px;height:5px;
-  border-bottom:2px solid #B07030;
-  border-radius:0 0 50% 50%;
-  bottom:14px;left:50%;transform:translateX(-50%);
-}
-.pet .blush{
-  position:absolute;width:8px;height:5px;
-  background:rgba(255,150,150,0.4);
-  border-radius:50%;
-  top:22px;
-}
-.pet .blush-l{left:6px}
-.pet .blush-r{right:6px}
-
-@keyframes bob{
-  0%,100%{transform:translateY(0)}
-  50%{transform:translateY(-4px)}
-}
-@keyframes heart{
-  0%{opacity:1;transform:translateY(0) scale(1)}
-  100%{opacity:0;transform:translateY(-40px) scale(1.5)}
-}
-@keyframes sparkle{
-  0%{opacity:0;transform:scale(0) rotate(0deg)}
-  50%{opacity:1;transform:scale(1) rotate(180deg)}
-  100%{opacity:0;transform:scale(0) rotate(360deg)}
-}
-
-/* 心形动画 */
-.heart{
-  position:absolute;
-  font-size:20px;
-  pointer-events:none;
-  z-index:30;
-  animation:heart 1s ease-out forwards;
-}
-
-/* 状态面板 */
-.status-panel{
-  position:absolute;
-  top:12px;left:12px;right:12px;
-  display:flex;gap:8px;
-  z-index:25;
-  pointer-events:none;
-}
-.stat{
-  background:rgba(0,0,0,0.55);
-  backdrop-filter:blur(8px);
-  color:#fff;
-  padding:6px 14px;
-  border-radius:20px;
-  font-size:13px;
-  display:flex;align-items:center;gap:6px;
-  pointer-events:auto;
-}
-.stat .bar{
-  width:60px;height:6px;
-  background:rgba(255,255,255,0.2);
-  border-radius:3px;
-  overflow:hidden;
-}
-.stat .bar-fill{
-  height:100%;border-radius:3px;
-  transition:width 0.5s ease;
-}
-.bar-hunger .bar-fill{background:linear-gradient(90deg,#FF6B6B,#FFB347)}
-.bar-happy .bar-fill{background:linear-gradient(90deg,#FFD700,#FF69B4)}
-.bar-energy .bar-fill{background:linear-gradient(90deg,#4ECDC4,#44CF6C)}
-
-/* 气泡 */
-.speech{
-  position:absolute;
-  background:rgba(255,255,255,0.95);
-  color:#333;
-  padding:8px 14px;
-  border-radius:16px;
-  font-size:13px;
-  z-index:25;
-  box-shadow:0 4px 12px rgba(0,0,0,0.15);
-  max-width:160px;
-  text-align:center;
-  animation:fadeIn 0.3s ease;
-  pointer-events:none;
-}
-.speech::after{
-  content:'';
-  position:absolute;
-  bottom:-8px;left:50%;
-  transform:translateX(-50%);
-  border:6px solid transparent;
-  border-top-color:rgba(255,255,255,0.95);
-}
-@keyframes fadeIn{
-  from{opacity:0;transform:translateY(8px)}
-  to{opacity:1;transform:translateY(0)}
-}
-
-/* 提示 */
-.hint{
-  position:absolute;
-  bottom:16px;left:50%;transform:translateX(-50%);
-  background:rgba(0,0,0,0.6);
-  color:#ccc;
-  padding:8px 20px;
-  border-radius:20px;
-  font-size:12px;
-  z-index:25;
-  pointer-events:none;
-  animation:pulse 3s ease-in-out infinite;
-}
-@keyframes pulse{
-  0%,100%{opacity:0.6}
-  50%{opacity:1}
-}
+body{background:#1a1a2e;display:flex;justify-content:center;align-items:center;min-height:100vh;font-family:'Segoe UI','PingFang SC',sans-serif;overflow:hidden;user-select:none}
+canvas{display:block;image-rendering:auto}
 </style>
 </head>
 <body>
-
-<div class="game-container">
-  <!-- 游戏背景 -->
-  <img class="bg" src="bg_game.png" alt="厨房背景" />
-
-  <!-- 状态面板 -->
-  <div class="status-panel">
-    <div class="stat bar-hunger">🍎 饱食 <div class="bar"><div class="bar-fill" style="width:72%"></div></div></div>
-    <div class="stat bar-happy">💛 心情 <div class="bar"><div class="bar-fill" style="width:85%"></div></div></div>
-    <div class="stat bar-energy">⚡ 体力 <div class="bar"><div class="bar-fill" style="width:60%"></div></div></div>
-  </div>
-
-  <!-- 宠物 -->
-  <div class="pet" id="pet" style="left:400px;top:680px" onclick="petClick()">
-    <div class="body">
-      <div class="ear-l"><div class="ear-inner"></div></div>
-      <div class="ear-r"><div class="ear-inner"></div></div>
-      <div class="eye eye-l"><div class="eye-shine"></div></div>
-      <div class="eye eye-r"><div class="eye-shine"></div></div>
-      <div class="blush blush-l"></div>
-      <div class="blush blush-r"></div>
-      <div class="mouth"></div>
-    </div>
-  </div>
-
-  <!-- ===== 可交互区域 ===== -->
-
-  <!-- 冰箱 -->
-  <div class="hotspot" style="left:95px;top:310px;width:190px;height:380px" onclick="interact('fridge')">
-    <span class="label">🧊 冰箱</span>
-  </div>
-
-  <!-- 灶台 -->
-  <div class="hotspot" style="left:280px;top:260px;width:180px;height:320px" onclick="interact('stove')">
-    <span class="label">🍳 灶台</span>
-  </div>
-
-  <!-- 水槽 -->
-  <div class="hotspot" style="left:440px;top:220px;width:170px;height:350px" onclick="interact('sink')">
-    <span class="label">🚿 水槽</span>
-  </div>
-
-  <!-- 窗户 -->
-  <div class="hotspot" style="left:570px;top:130px;width:180px;height:260px" onclick="interact('window')">
-    <span class="label">🪟 窗户</span>
-  </div>
-
-  <!-- 餐桌 -->
-  <div class="hotspot" style="left:450px;top:550px;width:260px;height:200px" onclick="interact('table')">
-    <span class="label">🍽️ 餐桌</span>
-  </div>
-
-  <!-- 绿植 -->
-  <div class="hotspot" style="left:620px;top:380px;width:120px;height:130px" onclick="interact('plant')">
-    <span class="label">🌿 绿植</span>
-  </div>
-
-  <!-- 藤编灯 -->
-  <div class="hotspot" style="left:580px;top:80px;width:100px;height:120px" onclick="interact('lamp')">
-    <span class="label">💡 吊灯</span>
-  </div>
-
-  <!-- 挂钟区域 -->
-  <div class="hotspot" style="left:150px;top:120px;width:100px;height:100px" onclick="interact('clock')">
-    <span class="label">🕐 挂钟</span>
-  </div>
-
-  <!-- 置物架 -->
-  <div class="hotspot" style="left:80px;top:200px;width:160px;height:100px" onclick="interact('shelf')">
-    <span class="label">🏺 置物架</span>
-  </div>
-
-  <!-- 提示 -->
-  <div class="hint">✨ 点击厨房物品与宠物互动 | 点击地面移动宠物</div>
-</div>
-
+<canvas id="game"></canvas>
 <script>
-const pet = document.getElementById('pet');
-let petX = 400, petY = 680;
-let stats = { hunger: 72, happy: 85, energy: 60 };
+// ========================================================
+// Kitchen Pet - 厨房电子宠物游戏
+// ========================================================
 
-// 宠物说话
-function speak(text, duration=2000) {
-  document.querySelectorAll('.speech').forEach(s => s.remove());
-  const s = document.createElement('div');
-  s.className = 'speech';
-  s.textContent = text;
-  s.style.left = (petX + 24 - 80) + 'px';
-  s.style.top = (petY - 50) + 'px';
-  document.querySelector('.game-container').appendChild(s);
-  setTimeout(() => s.remove(), duration);
-}
+const canvas = document.getElementById('game');
+const ctx = canvas.getContext('2d');
 
-// 冒爱心
-function hearts(count=3) {
+// 设备像素比适配
+const GAME_W = 900, GAME_H = 1200;
+const dpr = Math.min(window.devicePixelRatio || 1, 2);
+canvas.width = GAME_W * dpr;
+canvas.height = GAME_H * dpr;
+canvas.style.width = GAME_W + 'px';
+canvas.style.height = GAME_H + 'px';
+ctx.scale(dpr, dpr);
+
+// ========================================================
+// 资源加载
+// ========================================================
+const bgImg = new Image();
+bgImg.src = 'bg_game.png';
+let bgLoaded = false;
+bgImg.onload = () => { bgLoaded = true; init(); };
+
+// ========================================================
+// 游戏状态
+// ========================================================
+const state = {
+  hunger: 80,     // 饱食度 0-100
+  happy: 75,      // 心情 0-100
+  energy: 70,     // 体力 0-100
+  cleanliness: 90, // 清洁度
+  coins: 50,      // 金币
+  level: 1,       // 等级
+  exp: 0,         // 经验
+  day: 1,         // 天数
+  time: 0,        // 游戏时间(秒)
+  tick: 0,        // 帧计数
+};
+
+// ========================================================
+// 宠物系统
+// ========================================================
+const pet = {
+  x: 450, y: 700,
+  targetX: 450, targetY: 700,
+  vx: 0, vy: 0,
+  dir: 1,         // 1=右, -1=左
+  state: 'idle',  // idle|walking|eating|sleeping|playing|cooking|washing
+  stateTimer: 0,
+  frame: 0,
+  frameTimer: 0,
+  bobOffset: 0,
+  blinkTimer: 0,
+  isBlinking: false,
+  emotion: '😊',  // 当前表情
+  emotionTimer: 0,
+  trail: [],      // 移动轨迹粒子
+  autoTimer: 0,   // 自主行为计时
+  thoughtBubble: null,
+  thoughtTimer: 0,
+};
+
+// 宠物动画帧
+const petAnims = {
+  idle: { frames: 2, speed: 15 },
+  walking: { frames: 4, speed: 6 },
+  eating: { frames: 3, speed: 8 },
+  sleeping: { frames: 2, speed: 20 },
+  playing: { frames: 3, speed: 5 },
+};
+
+// ========================================================
+// 厨房物品（可交互区域）
+// ========================================================
+const items = [
+  { id:'fridge', x:95, y:310, w:190, h:380, label:'冰箱', icon:'🧊',
+    actions:['feed','store'], color:'rgba(168,216,200,0.15)' },
+  { id:'stove', x:280, y:260, w:180, h:320, label:'灶台', icon:'🍳',
+    actions:['cook','warm'], color:'rgba(255,180,100,0.15)' },
+  { id:'sink', x:440, y:220, w:170, h:350, label:'水槽', icon:'🚿',
+    actions:['wash','drink'], color:'rgba(100,180,255,0.15)' },
+  { id:'window', x:570, y:130, w:180, h:260, label:'窗户', icon:'🪟',
+    actions:['look','air'], color:'rgba(255,255,200,0.15)' },
+  { id:'table', x:450, y:550, w:260, h:200, label:'餐桌', icon:'🍽️',
+    actions:['eat','sit'], color:'rgba(255,220,180,0.15)' },
+  { id:'plant', x:620, y:380, w:120, h:130, label:'绿植', icon:'🌿',
+    actions:['water','smell'], color:'rgba(100,220,100,0.15)' },
+  { id:'lamp', x:580, y:80, w:100, h:120, label:'吊灯', icon:'💡',
+    actions:['toggle'], color:'rgba(255,240,200,0.15)' },
+  { id:'shelf', x:80, y:200, w:160, h:100, label:'置物架', icon:'🏺',
+    actions:['explore'], color:'rgba(200,180,160,0.15)' },
+];
+
+// 物品状态
+const itemStates = {
+  fridge: { open: false },
+  stove: { on: false, cookProgress: 0, cooking: false },
+  sink: { running: false },
+  window: { open: false },
+  lamp: { on: true },
+  table: { hasFood: false },
+};
+
+// ========================================================
+// 粒子系统
+// ========================================================
+const particles = [];
+
+function spawnParticle(x, y, type, count = 5) {
   for (let i = 0; i < count; i++) {
-    setTimeout(() => {
-      const h = document.createElement('div');
-      h.className = 'heart';
-      h.textContent = ['❤️','💕','💖','🧡'][Math.floor(Math.random()*4)];
-      h.style.left = (petX + 20 + Math.random()*20) + 'px';
-      h.style.top = (petY - 10) + 'px';
-      document.querySelector('.game-container').appendChild(h);
-      setTimeout(() => h.remove(), 1000);
-    }, i * 200);
+    particles.push({
+      x, y,
+      vx: (Math.random() - 0.5) * 3,
+      vy: -Math.random() * 3 - 1,
+      life: 1,
+      decay: 0.02 + Math.random() * 0.02,
+      size: 3 + Math.random() * 4,
+      type, // heart|star|steam|sparkle|drop|coin
+      color: type === 'heart' ? '#FF6B8A' :
+             type === 'star' ? '#FFD700' :
+             type === 'steam' ? '#E8E0D8' :
+             type === 'sparkle' ? '#FFE0A0' :
+             type === 'drop' ? '#80C8FF' :
+             type === 'coin' ? '#FFD700' : '#fff',
+    });
   }
 }
 
-// 更新状态条
-function updateBars() {
-  document.querySelector('.bar-hunger .bar-fill').style.width = stats.hunger + '%';
-  document.querySelector('.bar-happy .bar-fill').style.width = stats.happy + '%';
-  document.querySelector('.bar-energy .bar-fill').style.width = stats.energy + '%';
+function updateParticles() {
+  for (let i = particles.length - 1; i >= 0; i--) {
+    const p = particles[i];
+    p.x += p.vx;
+    p.y += p.vy;
+    p.vy += 0.02; // 重力
+    p.life -= p.decay;
+    if (p.life <= 0) particles.splice(i, 1);
+  }
 }
 
-// 互动
-function interact(item) {
-  const msgs = {
-    fridge: [
-      '打开了冰箱，好香！🍎',
-      '冰箱里有好多好吃的~',
-      '偷吃了点零食，饱食+15！',
-      '帮你整理了一下冰箱 🧊'
-    ],
-    stove: [
-      '正在做饭呢！小心烫~ 🍳',
-      '锅里咕嘟咕嘟冒泡泡~',
-      '做了一道拿手好菜！',
-      '灶台好暖和... 🔥'
-    ],
-    sink: [
-      '哗啦啦~在洗碗 🚿',
-      '水好凉快！玩水真开心~',
-      '把碗洗得干干净净！✨',
-      '泡泡好多！好好玩~'
-    ],
-    window: [
-      '外面天气好好呀~ ☀️',
-      '看到小鸟在飞！🐦',
-      '风吹进来好舒服~',
-      '窗外的风景真美！'
-    ],
-    table: [
-      '餐桌上的面包好香！🍞',
-      '坐下来喝杯咖啡吧~ ☕',
-      '一起吃早餐吧！',
-      '这个位置阳光最好~'
-    ],
-    plant: [
-      '绿植长得好好！🌿',
-      '给植物浇了点水~',
-      '叶子好绿好漂亮！',
-      '闻到了泥土的清香~'
-    ],
-    lamp: [
-      '吊灯好温馨~ 💡',
-      '藤编的灯罩好有质感！',
-      '灯光暖暖的~好舒服',
-      '光影摇摇晃晃好好看~'
-    ],
-    clock: [
-      '滴答滴答~时间在走 🕐',
-      '已经这么晚了吗！',
-      '挂钟好复古好好看~',
-      '要按时吃饭哦！'
-    ],
-    shelf: [
-      '架子上的罐子好可爱 🏺',
-      '这些杯子都是手工的呢~',
-      '闻到了陶土的味道~',
-      '帮你擦了擦置物架！'
-    ]
-  };
+function drawParticles() {
+  particles.forEach(p => {
+    ctx.globalAlpha = p.life;
+    ctx.font = `${p.size * 2}px sans-serif`;
+    const icons = { heart:'❤️', star:'⭐', steam:'💨', sparkle:'✨', drop:'💧', coin:'🪙' };
+    ctx.fillText(icons[p.type] || '•', p.x, p.y);
+    ctx.globalAlpha = 1;
+  });
+}
 
-  const pool = msgs[item] || ['~'];
-  const msg = pool[Math.floor(Math.random() * pool.length)];
+// ========================================================
+// 浮动文字
+// ========================================================
+const floatingTexts = [];
 
-  // 根据物品移动宠物到对应位置
-  const positions = {
-    fridge: {x:160, y:580},
-    stove: {x:340, y:520},
-    sink: {x:490, y:480},
-    window: {x:620, y:350},
-    table: {x:530, y:650},
-    plant: {x:660, y:500},
-    lamp: {x:620, y:250},
-    clock: {x:180, y:280},
-    shelf: {x:140, y:380}
-  };
+function showFloatingText(x, y, text, color = '#FFD700') {
+  floatingTexts.push({ x, y, text, color, life: 1, vy: -1.5 });
+}
 
-  const pos = positions[item];
-  if (pos) {
-    petX = pos.x;
-    petY = pos.y;
-    pet.style.left = petX + 'px';
-    pet.style.top = petY + 'px';
+function updateFloatingTexts() {
+  for (let i = floatingTexts.length - 1; i >= 0; i--) {
+    const t = floatingTexts[i];
+    t.y += t.vy;
+    t.life -= 0.015;
+    if (t.life <= 0) floatingTexts.splice(i, 1);
   }
+}
 
+function drawFloatingTexts() {
+  floatingTexts.forEach(t => {
+    ctx.globalAlpha = t.life;
+    ctx.font = 'bold 16px sans-serif';
+    ctx.fillStyle = t.color;
+    ctx.textAlign = 'center';
+    ctx.fillText(t.text, t.x, t.y);
+    ctx.globalAlpha = 1;
+  });
+  ctx.textAlign = 'left';
+}
+
+// ========================================================
+// 通知/消息系统
+// ========================================================
+const notifications = [];
+let notifY = 70;
+
+function notify(text, icon = '📢', duration = 3000) {
+  notifications.push({ text, icon, life: 1, duration, timer: 0, y: notifY });
+  notifY += 45;
   setTimeout(() => {
-    speak(msg);
-    hearts(2);
-
-    // 状态变化
-    if (item === 'fridge') { stats.hunger = Math.min(100, stats.hunger + 15); }
-    if (item === 'stove') { stats.hunger = Math.min(100, stats.hunger + 10); stats.energy = Math.max(0, stats.energy - 5); }
-    if (item === 'table') { stats.hunger = Math.min(100, stats.hunger + 8); stats.happy = Math.min(100, stats.happy + 5); }
-    if (item === 'plant' || item === 'window') { stats.happy = Math.min(100, stats.happy + 10); }
-    if (item === 'lamp' || item === 'shelf') { stats.happy = Math.min(100, stats.happy + 5); }
-    updateBars();
-  }, 500);
+    const idx = notifications.findIndex(n => n.text === text);
+    if (idx >= 0) {
+      notifications.splice(idx, 1);
+      notifY -= 45;
+    }
+  }, duration);
 }
 
-// 点击地面移动宠物
-document.querySelector('.game-container').addEventListener('click', function(e) {
-  if (e.target.closest('.hotspot') || e.target.closest('.pet')) return;
-  const rect = this.getBoundingClientRect();
-  petX = Math.max(30, Math.min(820, e.clientX - rect.left - 24));
-  petY = Math.max(200, Math.min(900, e.clientY - rect.top - 24));
-  pet.style.left = petX + 'px';
-  pet.style.top = petY + 'px';
+function drawNotifications() {
+  notifications.forEach((n, i) => {
+    n.timer++;
+    n.life = Math.min(1, n.timer / 15);
+    const alpha = n.life;
+    const x = GAME_W / 2;
+    const y = 60 + i * 42;
+    
+    ctx.globalAlpha = alpha * 0.9;
+    ctx.fillStyle = 'rgba(0,0,0,0.6)';
+    const tw = ctx.measureText(n.icon + ' ' + n.text).width;
+    roundRect(x - tw/2 - 15, y - 14, tw + 30, 28, 14);
+    ctx.fill();
+    
+    ctx.globalAlpha = alpha;
+    ctx.font = '13px sans-serif';
+    ctx.fillStyle = '#fff';
+    ctx.textAlign = 'center';
+    ctx.fillText(n.icon + ' ' + n.text, x, y + 4);
+    ctx.textAlign = 'left';
+    ctx.globalAlpha = 1;
+  });
+}
+
+// ========================================================
+// 绘制工具
+// ========================================================
+function roundRect(x, y, w, h, r) {
+  ctx.beginPath();
+  ctx.moveTo(x + r, y);
+  ctx.lineTo(x + w - r, y);
+  ctx.quadraticCurveTo(x + w, y, x + w, y + r);
+  ctx.lineTo(x + w, y + h - r);
+  ctx.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
+  ctx.lineTo(x + r, y + h);
+  ctx.quadraticCurveTo(x, y + h, x, y + h - r);
+  ctx.lineTo(x, y + r);
+  ctx.quadraticCurveTo(x, y, x + r, y);
+  ctx.closePath();
+}
+
+// ========================================================
+// 绘制宠物
+// ========================================================
+function drawPet() {
+  const { x, y, dir, state: petState, frame, isBlinking } = pet;
+  
+  // 身体弹跳
+  const bob = Math.sin(pet.bobOffset) * 3;
+  const py = y + bob;
+  
+  ctx.save();
+  ctx.translate(x, py);
+  if (dir === -1) ctx.scale(-1, 1);
+  
+  // 阴影
+  ctx.fillStyle = 'rgba(0,0,0,0.1)';
+  ctx.beginPath();
+  ctx.ellipse(0, 20, 22, 6, 0, 0, Math.PI * 2);
+  ctx.fill();
+  
+  // 身体（圆润可爱）
+  const bodyGrad = ctx.createRadialGradient(-5, -5, 5, 0, 0, 25);
+  bodyGrad.addColorStop(0, '#FFE4B8');
+  bodyGrad.addColorStop(0.7, '#F0A050');
+  bodyGrad.addColorStop(1, '#D08030');
+  ctx.fillStyle = bodyGrad;
+  ctx.beginPath();
+  ctx.ellipse(0, 0, 24, 22, 0, 0, Math.PI * 2);
+  ctx.fill();
+  
+  // 耳朵
+  ctx.fillStyle = '#F0A050';
+  // 左耳
+  ctx.beginPath();
+  ctx.ellipse(-14, -18, 8, 12, -0.3, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.fillStyle = '#FFB870';
+  ctx.beginPath();
+  ctx.ellipse(-14, -16, 5, 7, -0.3, 0, Math.PI * 2);
+  ctx.fill();
+  // 右耳
+  ctx.fillStyle = '#F0A050';
+  ctx.beginPath();
+  ctx.ellipse(14, -18, 8, 12, 0.3, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.fillStyle = '#FFB870';
+  ctx.beginPath();
+  ctx.ellipse(14, -16, 5, 7, 0.3, 0, Math.PI * 2);
+  ctx.fill();
+  
+  // 脸部
+  // 眼睛
+  if (petState === 'sleeping') {
+    // 睡觉 - 弧线眼
+    ctx.strokeStyle = '#333';
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.arc(-8, -4, 4, 0, Math.PI);
+    ctx.stroke();
+    ctx.beginPath();
+    ctx.arc(8, -4, 4, 0, Math.PI);
+    ctx.stroke();
+  } else if (isBlinking) {
+    // 眨眼
+    ctx.strokeStyle = '#333';
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.moveTo(-12, -4); ctx.lineTo(-4, -4);
+    ctx.stroke();
+    ctx.beginPath();
+    ctx.moveTo(4, -4); ctx.lineTo(12, -4);
+    ctx.stroke();
+  } else {
+    // 正常眼睛
+    ctx.fillStyle = '#333';
+    ctx.beginPath();
+    ctx.ellipse(-8, -4, 4, 5, 0, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.beginPath();
+    ctx.ellipse(8, -4, 4, 5, 0, 0, Math.PI * 2);
+    ctx.fill();
+    // 眼睛高光
+    ctx.fillStyle = '#fff';
+    ctx.beginPath();
+    ctx.arc(-6, -6, 2, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.beginPath();
+    ctx.arc(10, -6, 2, 0, Math.PI * 2);
+    ctx.fill();
+  }
+  
+  // 腮红
+  ctx.fillStyle = 'rgba(255,150,150,0.35)';
+  ctx.beginPath();
+  ctx.ellipse(-16, 2, 6, 4, 0, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.beginPath();
+  ctx.ellipse(16, 2, 6, 4, 0, 0, Math.PI * 2);
+  ctx.fill();
+  
+  // 嘴巴
+  if (petState === 'eating') {
+    // 吃东西 - 张嘴
+    ctx.fillStyle = '#C06030';
+    ctx.beginPath();
+    ctx.ellipse(0, 6, 5, 4, 0, 0, Math.PI * 2);
+    ctx.fill();
+  } else if (petState === 'playing') {
+    // 开心 - 大笑
+    ctx.strokeStyle = '#B07030';
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.arc(0, 3, 6, 0.1, Math.PI - 0.1);
+    ctx.stroke();
+  } else {
+    // 普通微笑
+    ctx.strokeStyle = '#B07030';
+    ctx.lineWidth = 1.5;
+    ctx.beginPath();
+    ctx.arc(0, 4, 4, 0.2, Math.PI - 0.2);
+    ctx.stroke();
+  }
+  
+  // 尾巴
+  const tailWag = Math.sin(state.time * 3) * 0.3;
+  ctx.strokeStyle = '#F0A050';
+  ctx.lineWidth = 4;
+  ctx.lineCap = 'round';
+  ctx.beginPath();
+  ctx.moveTo(-20, 5);
+  ctx.quadraticCurveTo(-30, -5 + Math.sin(tailWag) * 8, -28, -15 + Math.sin(tailWag) * 5);
+  ctx.stroke();
+  
+  // 小手（走路时摆动）
+  const armSwing = petState === 'walking' ? Math.sin(state.time * 8) * 0.4 : 0;
+  ctx.fillStyle = '#F0A050';
+  ctx.beginPath();
+  ctx.ellipse(-18, 8 + armSwing * 5, 5, 4, -0.3 + armSwing, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.beginPath();
+  ctx.ellipse(18, 8 - armSwing * 5, 5, 4, 0.3 - armSwing, 0, Math.PI * 2);
+  ctx.fill();
+  
+  ctx.restore();
+  
+  // 表情气泡
+  if (pet.emotionTimer > 0) {
+    ctx.font = '20px sans-serif';
+    ctx.globalAlpha = Math.min(1, pet.emotionTimer / 10);
+    ctx.fillText(pet.emotion, x + 20, py - 30);
+    ctx.globalAlpha = 1;
+  }
+  
+  // 思考气泡
+  if (pet.thoughtBubble && pet.thoughtTimer > 0) {
+    const tx = x + 30;
+    const ty = py - 50;
+    ctx.globalAlpha = Math.min(1, pet.thoughtTimer / 15);
+    // 小圆点
+    ctx.fillStyle = '#fff';
+    ctx.beginPath(); ctx.arc(x + 15, py - 20, 3, 0, Math.PI * 2); ctx.fill();
+    ctx.beginPath(); ctx.arc(x + 22, py - 30, 4, 0, Math.PI * 2); ctx.fill();
+    // 气泡
+    ctx.fillStyle = 'rgba(255,255,255,0.95)';
+    roundRect(tx, ty - 5, 30, 25, 10);
+    ctx.fill();
+    ctx.strokeStyle = '#ddd'; ctx.lineWidth = 1; ctx.stroke();
+    ctx.font = '16px sans-serif';
+    ctx.fillText(pet.thoughtBubble, tx + 5, ty + 13);
+    ctx.globalAlpha = 1;
+  }
+}
+
+// ========================================================
+// 绘制UI
+// ========================================================
+function drawUI() {
+  // 状态条
+  const bars = [
+    { label:'饱食', value:state.hunger, icon:'🍎', color:['#FF6B6B','#FFB347'] },
+    { label:'心情', value:state.happy, icon:'💛', color:['#FFD700','#FF69B4'] },
+    { label:'体力', value:state.energy, icon:'⚡', color:['#4ECDC4','#44CF6C'] },
+    { label:'清洁', value:state.cleanliness, icon:'🫧', color:['#80C8FF','#B0A0FF'] },
+  ];
+  
+  // 顶部面板
+  ctx.fillStyle = 'rgba(0,0,0,0.5)';
+  roundRect(10, 10, 340, 55, 12);
+  ctx.fill();
+  
+  bars.forEach((bar, i) => {
+    const bx = 20 + (i % 2) * 165;
+    const by = 18 + Math.floor(i / 2) * 24;
+    
+    ctx.font = '11px sans-serif';
+    ctx.fillStyle = '#ccc';
+    ctx.fillText(bar.icon, bx, by + 12);
+    
+    // 条背景
+    ctx.fillStyle = 'rgba(255,255,255,0.15)';
+    roundRect(bx + 18, by + 2, 80, 10, 5);
+    ctx.fill();
+    
+    // 条填充
+    const grad = ctx.createLinearGradient(bx + 18, 0, bx + 98, 0);
+    grad.addColorStop(0, bar.color[0]);
+    grad.addColorStop(1, bar.color[1]);
+    ctx.fillStyle = grad;
+    roundRect(bx + 18, by + 2, 80 * bar.value / 100, 10, 5);
+    ctx.fill();
+    
+    ctx.fillStyle = '#fff';
+    ctx.font = '9px sans-serif';
+    ctx.fillText(Math.round(bar.value) + '%', bx + 102, by + 11);
+  });
+  
+  // 金币 & 等级
+  ctx.fillStyle = 'rgba(0,0,0,0.5)';
+  roundRect(GAME_W - 160, 10, 150, 35, 10);
+  ctx.fill();
+  ctx.font = '13px sans-serif';
+  ctx.fillStyle = '#FFD700';
+  ctx.fillText(`🪙 ${state.coins}`, GAME_W - 150, 32);
+  ctx.fillStyle = '#AAF';
+  ctx.fillText(`⭐ Lv.${state.level}`, GAME_W - 80, 32);
+  
+  // 经验条
+  ctx.fillStyle = 'rgba(0,0,0,0.3)';
+  roundRect(GAME_W - 160, 48, 150, 6, 3);
+  ctx.fill();
+  ctx.fillStyle = '#88AAFF';
+  roundRect(GAME_W - 160, 48, 150 * (state.exp % 100) / 100, 6, 3);
+  ctx.fill();
+  
+  // 时间/天数
+  ctx.fillStyle = 'rgba(0,0,0,0.5)';
+  roundRect(GAME_W - 160, 58, 150, 22, 8);
+  ctx.fill();
+  const hrs = Math.floor(state.time / 3600) % 24;
+  const mins = Math.floor(state.time / 60) % 60;
+  const timeStr = `${String(hrs).padStart(2,'0')}:${String(mins).padStart(2,'0')}`;
+  ctx.font = '11px sans-serif';
+  ctx.fillStyle = '#ccc';
+  ctx.textAlign = 'center';
+  ctx.fillText(`Day ${state.day}  ${timeStr}`, GAME_W - 85, 73);
+  ctx.textAlign = 'left';
+  
+  // 底部操作栏
+  drawActionBar();
+  
+  // 通知
+  drawNotifications();
+}
+
+function drawActionBar() {
+  const actions = [
+    { icon:'🍖', label:'喂食', action:'feed' },
+    { icon:'🎾', label:'玩耍', action:'play' },
+    { icon:'😴', label:'睡觉', action:'sleep' },
+    { icon:'🧹', label:'打扫', action:'clean' },
+    { icon:'🛒', label:'商店', action:'shop' },
+  ];
+  
+  const barW = actions.length * 72 + 20;
+  const barX = (GAME_W - barW) / 2;
+  const barY = GAME_H - 75;
+  
+  ctx.fillStyle = 'rgba(0,0,0,0.6)';
+  roundRect(barX, barY, barW, 60, 16);
+  ctx.fill();
+  
+  actions.forEach((a, i) => {
+    const ax = barX + 18 + i * 72;
+    const ay = barY + 8;
+    
+    // 按钮背景
+    ctx.fillStyle = 'rgba(255,255,255,0.08)';
+    roundRect(ax, ay, 56, 44, 10);
+    ctx.fill();
+    
+    ctx.font = '22px sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText(a.icon, ax + 28, ay + 25);
+    ctx.font = '10px sans-serif';
+    ctx.fillStyle = '#aaa';
+    ctx.fillText(a.label, ax + 28, ay + 40);
+    ctx.textAlign = 'left';
+  });
+}
+
+// ========================================================
+// 游戏逻辑
+// ========================================================
+function updateGame() {
+  state.time += 1/60;
+  state.tick++;
+  
+  // 状态衰减（每秒）
+  if (state.tick % 60 === 0) {
+    state.hunger = Math.max(0, state.hunger - 0.3);
+    state.happy = Math.max(0, state.happy - 0.2);
+    state.energy = Math.max(0, state.energy - 0.15);
+    state.cleanliness = Math.max(0, state.cleanliness - 0.1);
+    
+    // 低状态警告
+    if (state.hunger < 20 && state.tick % 300 === 0) {
+      notify('宠物饿了！快喂食吧 🍖', '⚠️');
+      pet.thoughtBubble = '🍖';
+      pet.thoughtTimer = 120;
+    }
+    if (state.happy < 20 && state.tick % 300 === 0) {
+      notify('宠物心情不好，陪它玩玩吧 🎾', '⚠️');
+      pet.thoughtBubble = '😢';
+      pet.thoughtTimer = 120;
+    }
+    if (state.energy < 15 && state.tick % 300 === 0) {
+      notify('宠物太累了，需要休息 😴', '⚠️');
+      pet.thoughtBubble = '💤';
+      pet.thoughtTimer = 120;
+    }
+  }
+  
+  // 经验和升级
+  if (state.exp >= state.level * 100) {
+    state.level++;
+    state.exp = 0;
+    state.coins += 20;
+    notify(`🎉 升级到 Lv.${state.level}！获得20金币`, '⭐', 4000);
+    spawnParticle(pet.x, pet.y - 30, 'star', 15);
+    spawnParticle(pet.x, pet.y - 30, 'sparkle', 10);
+  }
+  
+  // 宠物更新
+  updatePet();
+  updateParticles();
+  updateFloatingTexts();
+}
+
+function updatePet() {
+  // 弹跳
+  pet.bobOffset += pet.state === 'walking' ? 0.15 : 0.06;
+  
+  // 眨眼
+  pet.blinkTimer--;
+  if (pet.blinkTimer <= 0) {
+    if (pet.isBlinking) {
+      pet.isBlinking = false;
+      pet.blinkTimer = 120 + Math.random() * 180;
+    } else {
+      pet.isBlinking = true;
+      pet.blinkTimer = 8;
+    }
+  }
+  
+  // 表情计时
+  if (pet.emotionTimer > 0) pet.emotionTimer--;
+  if (pet.thoughtTimer > 0) pet.thoughtTimer--;
+  
+  // 状态计时
+  if (pet.stateTimer > 0) {
+    pet.stateTimer--;
+    if (pet.stateTimer <= 0) {
+      pet.state = 'idle';
+    }
+    return; // 状态进行中不移动
+  }
+  
+  // 移动
+  const dx = pet.targetX - pet.x;
+  const dy = pet.targetY - pet.y;
+  const dist = Math.sqrt(dx * dx + dy * dy);
+  
+  if (dist > 5) {
+    pet.state = 'walking';
+    const speed = 2.5;
+    pet.x += (dx / dist) * speed;
+    pet.y += (dy / dist) * speed;
+    pet.dir = dx > 0 ? 1 : -1;
+    
+    // 移动粒子
+    if (state.tick % 8 === 0) {
+      pet.trail.push({ x: pet.x, y: pet.y + 18, life: 1 });
+    }
+  } else {
+    if (pet.state === 'walking') pet.state = 'idle';
+  }
+  
+  // 轨迹粒子
+  for (let i = pet.trail.length - 1; i >= 0; i--) {
+    pet.trail[i].life -= 0.03;
+    if (pet.trail[i].life <= 0) pet.trail.splice(i, 1);
+  }
+  
+  // 自主行为
+  pet.autoTimer--;
+  if (pet.autoTimer <= 0 && pet.state === 'idle') {
+    doAutoBehavior();
+    pet.autoTimer = 180 + Math.random() * 300; // 3-8秒
+  }
+  
+  // 灶台烹饪进度
+  if (itemStates.stove.cooking) {
+    itemStates.stove.cookProgress += 0.15;
+    if (state.tick % 20 === 0) spawnParticle(370, 280, 'steam', 2);
+    if (itemStates.stove.cookProgress >= 100) {
+      itemStates.stove.cooking = false;
+      itemStates.stove.cookProgress = 0;
+      itemStates.table.hasFood = true;
+      state.hunger = Math.min(100, state.hunger + 25);
+      state.coins += 5;
+      state.exp += 15;
+      notify('🍳 做好了！美食已上桌 +25饱食 +5金币', '✅');
+      showFloatingText(370, 260, '+25 🍖', '#FF6B6B');
+      showFloatingText(370, 240, '+5 🪙', '#FFD700');
+    }
+  }
+}
+
+function doAutoBehavior() {
+  // 根据状态选择自主行为
+  if (state.hunger < 30) {
+    // 去冰箱找吃的
+    movePetTo(160, 580);
+    pet.thoughtBubble = '🍖';
+    pet.thoughtTimer = 90;
+  } else if (state.energy < 25) {
+    // 去角落休息
+    pet.state = 'sleeping';
+    pet.stateTimer = 300;
+    pet.emotion = '💤';
+    pet.emotionTimer = 300;
+  } else if (state.happy < 30) {
+    // 去窗户看风景
+    movePetTo(620, 350);
+    pet.thoughtBubble = '🌤️';
+    pet.thoughtTimer = 90;
+  } else {
+    // 随机探索
+    const targets = [
+      {x:200,y:600}, {x:400,y:650}, {x:550,y:500},
+      {x:300,y:550}, {x:650,y:450}, {x:150,y:500},
+    ];
+    const t = targets[Math.floor(Math.random() * targets.length)];
+    movePetTo(t.x, t.y);
+    
+    // 随机表情
+    const emojis = ['😊','🎵','🌟','💭','🐾','✨'];
+    pet.emotion = emojis[Math.floor(Math.random() * emojis.length)];
+    pet.emotionTimer = 60;
+  }
+}
+
+function movePetTo(x, y) {
+  pet.targetX = Math.max(40, Math.min(GAME_W - 40, x));
+  pet.targetY = Math.max(200, Math.min(GAME_H - 100, y));
+}
+
+// ========================================================
+// 交互处理
+// ========================================================
+function interact(item) {
+  const dx = item.x + item.w / 2;
+  const dy = item.y + item.h / 2;
+  movePetTo(dx, dy);
+  
+  setTimeout(() => {
+    switch (item.id) {
+      case 'fridge':
+        itemStates.fridge.open = !itemStates.fridge.open;
+        state.hunger = Math.min(100, state.hunger + 20);
+        state.exp += 10;
+        pet.state = 'eating';
+        pet.stateTimer = 90;
+        pet.emotion = '😋';
+        pet.emotionTimer = 90;
+        spawnParticle(pet.x, pet.y - 10, 'heart', 3);
+        showFloatingText(pet.x, pet.y - 40, '+20 饱食', '#FF6B6B');
+        notify('从冰箱拿了好吃的！🍖', '🧊');
+        break;
+        
+      case 'stove':
+        if (!itemStates.stove.cooking) {
+          itemStates.stove.cooking = true;
+          itemStates.stove.cookProgress = 0;
+          itemStates.stove.on = true;
+          pet.state = 'cooking';
+          pet.stateTimer = 60;
+          pet.emotion = '👨‍🍳';
+          pet.emotionTimer = 60;
+          notify('开始做饭了！🍳', '🔥');
+          state.exp += 5;
+        } else {
+          notify('还在做呢，别急~ ⏳', '🍳');
+        }
+        break;
+        
+      case 'sink':
+        itemStates.sink.running = !itemStates.sink.running;
+        state.cleanliness = Math.min(100, state.cleanliness + 25);
+        state.energy = Math.max(0, state.energy - 5);
+        pet.state = 'washing';
+        pet.stateTimer = 60;
+        pet.emotion = '🫧';
+        pet.emotionTimer = 60;
+        spawnParticle(pet.x, pet.y - 10, 'drop', 5);
+        showFloatingText(pet.x, pet.y - 40, '+25 清洁', '#80C8FF');
+        notify('洗得干干净净！✨', '🚿');
+        state.exp += 8;
+        break;
+        
+      case 'window':
+        itemStates.window.open = !itemStates.window.open;
+        state.happy = Math.min(100, state.happy + 15);
+        pet.emotion = '☀️';
+        pet.emotionTimer = 80;
+        showFloatingText(pet.x, pet.y - 40, '+15 心情', '#FFD700');
+        notify('窗外风景真好~ 🌤️', '🪟');
+        state.exp += 5;
+        break;
+        
+      case 'table':
+        if (itemStates.table.hasFood) {
+          state.hunger = Math.min(100, state.hunger + 15);
+          state.happy = Math.min(100, state.happy + 10);
+          itemStates.table.hasFood = false;
+          pet.state = 'eating';
+          pet.stateTimer = 90;
+          pet.emotion = '😋';
+          pet.emotionTimer = 90;
+          spawnParticle(pet.x, pet.y - 10, 'heart', 4);
+          showFloatingText(pet.x, pet.y - 40, '+15 饱食 +10 心情', '#FFB347');
+          notify('享用了一顿美餐！🍽️', '✅');
+          state.exp += 12;
+        } else {
+          state.happy = Math.min(100, state.happy + 5);
+          pet.emotion = '☕';
+          pet.emotionTimer = 60;
+          notify('在餐桌旁休息了一会~', '🍽️');
+        }
+        break;
+        
+      case 'plant':
+        state.happy = Math.min(100, state.happy + 12);
+        pet.emotion = '🌿';
+        pet.emotionTimer = 60;
+        spawnParticle(660, 400, 'drop', 3);
+        showFloatingText(pet.x, pet.y - 40, '+12 心情', '#44CF6C');
+        notify('给绿植浇了浇水~ 🌱', '🌿');
+        state.exp += 5;
+        break;
+        
+      case 'lamp':
+        itemStates.lamp.on = !itemStates.lamp.on;
+        pet.emotion = itemStates.lamp.on ? '💡' : '🌙';
+        pet.emotionTimer = 60;
+        notify(itemStates.lamp.on ? '灯开了，好温馨~' : '关灯休息~', '💡');
+        break;
+        
+      case 'shelf':
+        const finds = [
+          { text:'找到了一颗糖果！+5饱食', icon:'🍬', effect:() => { state.hunger += 5; } },
+          { text:'找到了一朵小花！+8心情', icon:'🌸', effect:() => { state.happy += 8; } },
+          { text:'找到了一枚硬币！+3金币', icon:'🪙', effect:() => { state.coins += 3; } },
+          { text:'找到了一个小玩具！+10心情', icon:'🧸', effect:() => { state.happy += 10; } },
+          { text:'什么都没找到...', icon:'💨', effect:() => {} },
+        ];
+        const find = finds[Math.floor(Math.random() * finds.length)];
+        find.effect();
+        pet.emotion = find.icon;
+        pet.emotionTimer = 80;
+        spawnParticle(pet.x, pet.y - 20, 'sparkle', 5);
+        notify(find.text, find.icon);
+        state.exp += 8;
+        break;
+    }
+  }, 600);
+}
+
+// 底部按钮交互
+function handleActionBar(mx, my) {
+  const actions = ['feed','play','sleep','clean','shop'];
+  const barW = actions.length * 72 + 20;
+  const barX = (GAME_W - barW) / 2;
+  const barY = GAME_H - 75;
+  
+  for (let i = 0; i < actions.length; i++) {
+    const ax = barX + 18 + i * 72;
+    const ay = barY + 8;
+    if (mx >= ax && mx <= ax + 56 && my >= ay && my <= ay + 44) {
+      performAction(actions[i]);
+      return true;
+    }
+  }
+  return false;
+}
+
+function performAction(action) {
+  switch (action) {
+    case 'feed':
+      state.hunger = Math.min(100, state.hunger + 15);
+      state.exp += 8;
+      pet.state = 'eating';
+      pet.stateTimer = 80;
+      pet.emotion = '🍖';
+      pet.emotionTimer = 80;
+      spawnParticle(pet.x, pet.y - 10, 'heart', 4);
+      showFloatingText(pet.x, pet.y - 40, '+15 饱食', '#FF6B6B');
+      notify('喂了宠物好吃的！🍖', '🍎');
+      break;
+    case 'play':
+      if (state.energy < 10) {
+        notify('宠物太累了，先休息一下吧~', '😴');
+        return;
+      }
+      state.happy = Math.min(100, state.happy + 20);
+      state.energy = Math.max(0, state.energy - 10);
+      state.exp += 12;
+      pet.state = 'playing';
+      pet.stateTimer = 120;
+      pet.emotion = '🎉';
+      pet.emotionTimer = 120;
+      spawnParticle(pet.x, pet.y - 20, 'star', 8);
+      spawnParticle(pet.x, pet.y - 20, 'sparkle', 6);
+      showFloatingText(pet.x, pet.y - 50, '+20 心情', '#FFD700');
+      notify('和宠物玩得好开心！🎾', '🎮');
+      break;
+    case 'sleep':
+      state.energy = Math.min(100, state.energy + 30);
+      state.hunger = Math.max(0, state.hunger - 5);
+      pet.state = 'sleeping';
+      pet.stateTimer = 180;
+      pet.emotion = '💤';
+      pet.emotionTimer = 180;
+      showFloatingText(pet.x, pet.y - 40, '+30 体力', '#4ECDC4');
+      notify('宠物睡着了~ 💤', '😴', 3000);
+      break;
+    case 'clean':
+      state.cleanliness = Math.min(100, state.cleanliness + 30);
+      state.happy = Math.min(100, state.happy + 5);
+      state.exp += 6;
+      pet.emotion = '✨';
+      pet.emotionTimer = 60;
+      spawnParticle(pet.x, pet.y - 10, 'sparkle', 8);
+      showFloatingText(pet.x, pet.y - 40, '+30 清洁', '#B0A0FF');
+      notify('打扫得干干净净！🧹', '✨');
+      break;
+    case 'shop':
+      openShop();
+      break;
+  }
+}
+
+// 商店系统
+let shopOpen = false;
+let shopItems = [
+  { name:'高级猫粮', icon:'🥩', price:20, effect:() => { state.hunger = Math.min(100, state.hunger + 40); } },
+  { name:'毛线球', icon:'🧶', price:15, effect:() => { state.happy = Math.min(100, state.happy + 30); } },
+  { name:'能量饮料', icon:'🧴', price:25, effect:() => { state.energy = Math.min(100, state.energy + 50); } },
+  { name:'泡泡浴', icon:'🛁', price:30, effect:() => { state.cleanliness = 100; state.happy += 15; } },
+  { name:'小鱼干', icon:'🐟', price:10, effect:() => { state.hunger += 15; state.happy += 10; } },
+];
+
+function openShop() {
+  shopOpen = !shopOpen;
+  if (shopOpen) notify('欢迎光临！🛒', '🏪');
+}
+
+function drawShop() {
+  if (!shopOpen) return;
+  
+  // 背景遮罩
+  ctx.fillStyle = 'rgba(0,0,0,0.6)';
+  ctx.fillRect(0, 0, GAME_W, GAME_H);
+  
+  // 商店面板
+  const pw = 400, ph = 350;
+  const px = (GAME_W - pw) / 2, py = (GAME_H - ph) / 2;
+  
+  ctx.fillStyle = 'rgba(40,35,50,0.95)';
+  roundRect(px, py, pw, ph, 20);
+  ctx.fill();
+  ctx.strokeStyle = 'rgba(168,216,200,0.5)';
+  ctx.lineWidth = 2;
+  roundRect(px, py, pw, ph, 20);
+  ctx.stroke();
+  
+  // 标题
+  ctx.font = 'bold 18px sans-serif';
+  ctx.fillStyle = '#FFD700';
+  ctx.textAlign = 'center';
+  ctx.fillText('🛒 宠物商店', GAME_W / 2, py + 35);
+  ctx.font = '13px sans-serif';
+  ctx.fillStyle = '#aaa';
+  ctx.fillText(`🪙 ${state.coins} 金币`, GAME_W / 2, py + 55);
+  
+  // 商品
+  shopItems.forEach((item, i) => {
+    const iy = py + 75 + i * 50;
+    const ix = px + 20;
+    
+    // 背景
+    ctx.fillStyle = 'rgba(255,255,255,0.05)';
+    roundRect(ix, iy, pw - 40, 42, 10);
+    ctx.fill();
+    
+    // 商品信息
+    ctx.font = '15px sans-serif';
+    ctx.fillStyle = '#fff';
+    ctx.textAlign = 'left';
+    ctx.fillText(`${item.icon} ${item.name}`, ix + 12, iy + 27);
+    
+    // 价格按钮
+    const canBuy = state.coins >= item.price;
+    ctx.fillStyle = canBuy ? 'rgba(168,216,200,0.3)' : 'rgba(255,100,100,0.2)';
+    roundRect(ix + pw - 120, iy + 6, 80, 30, 8);
+    ctx.fill();
+    ctx.font = '13px sans-serif';
+    ctx.fillStyle = canBuy ? '#A8D8C8' : '#FF6B6B';
+    ctx.textAlign = 'center';
+    ctx.fillText(`🪙 ${item.price}`, ix + pw - 80, iy + 26);
+  });
+  
+  // 关闭按钮
+  ctx.fillStyle = 'rgba(255,100,100,0.3)';
+  roundRect(px + pw - 45, py + 10, 35, 25, 8);
+  ctx.fill();
+  ctx.font = '14px sans-serif';
+  ctx.fillStyle = '#FF6B6B';
+  ctx.textAlign = 'center';
+  ctx.fillText('✕', px + pw - 28, py + 27);
+  ctx.textAlign = 'left';
+}
+
+function handleShopClick(mx, my) {
+  if (!shopOpen) return false;
+  
+  const pw = 400, ph = 350;
+  const px = (GAME_W - pw) / 2, py = (GAME_H - ph) / 2;
+  
+  // 关闭
+  if (mx >= px + pw - 45 && mx <= px + pw - 10 && my >= py + 10 && my <= py + 35) {
+    shopOpen = false;
+    return true;
+  }
+  
+  // 购买
+  shopItems.forEach((item, i) => {
+    const iy = py + 75 + i * 50;
+    const ix = px + 20;
+    if (mx >= ix + pw - 120 && mx <= ix + pw - 40 && my >= iy + 6 && my <= iy + 36) {
+      if (state.coins >= item.price) {
+        state.coins -= item.price;
+        item.effect();
+        spawnParticle(pet.x, pet.y - 20, 'sparkle', 8);
+        showFloatingText(pet.x, pet.y - 40, `购买了${item.name}!`, '#A8D8C8');
+        notify(`使用了 ${item.icon} ${item.name}！`, '🛒');
+        state.exp += 5;
+      } else {
+        notify('金币不够哦~ 💸', '😅');
+      }
+    }
+  });
+  
+  return true;
+}
+
+// ========================================================
+// 点击处理
+// ========================================================
+canvas.addEventListener('click', (e) => {
+  const rect = canvas.getBoundingClientRect();
+  const mx = (e.clientX - rect.left) * (GAME_W / rect.width);
+  const my = (e.clientY - rect.top) * (GAME_H / rect.height);
+  
+  // 商店点击
+  if (handleShopClick(mx, my)) return;
+  
+  // 底部按钮
+  if (handleActionBar(mx, my)) return;
+  
+  // 物品交互
+  for (const item of items) {
+    if (mx >= item.x && mx <= item.x + item.w && my >= item.y && my <= item.y + item.h) {
+      interact(item);
+      return;
+    }
+  }
+  
+  // 点击宠物
+  const pdx = mx - pet.x, pdy = my - pet.y;
+  if (pdx * pdx + pdy * pdy < 900) {
+    pet.state = 'playing';
+    pet.stateTimer = 40;
+    pet.emotion = '💕';
+    pet.emotionTimer = 60;
+    state.happy = Math.min(100, state.happy + 5);
+    spawnParticle(pet.x, pet.y - 20, 'heart', 5);
+    showFloatingText(pet.x, pet.y - 50, '+5 ❤️', '#FF6B8A');
+    return;
+  }
+  
+  // 点击地面移动
+  movePetTo(mx, my);
 });
 
-// 点击宠物
-function petClick() {
-  const reactions = ['摸摸头~好舒服！','汪！💕','嘿嘿~','最喜欢你了！','再摸摸~','蹭蹭~🧡'];
-  speak(reactions[Math.floor(Math.random()*reactions.length)]);
-  hearts(4);
-  stats.happy = Math.min(100, stats.happy + 8);
-  updateBars();
+// ========================================================
+// 可交互区域高亮
+// ========================================================
+function drawHotspots() {
+  items.forEach(item => {
+    const mx = lastMouseX, my = lastMouseY;
+    if (mx >= item.x && mx <= item.x + item.w && my >= item.y && my <= item.y + item.h) {
+      ctx.fillStyle = item.color;
+      roundRect(item.x, item.y, item.w, item.h, 10);
+      ctx.fill();
+      ctx.strokeStyle = 'rgba(168,216,200,0.5)';
+      ctx.lineWidth = 1.5;
+      roundRect(item.x, item.y, item.w, item.h, 10);
+      ctx.stroke();
+      
+      // 标签
+      ctx.fillStyle = 'rgba(0,0,0,0.7)';
+      const tw = ctx.measureText(item.icon + ' ' + item.label).width;
+      roundRect(item.x + item.w/2 - tw/2 - 10, item.y - 28, tw + 20, 22, 6);
+      ctx.fill();
+      ctx.font = '12px sans-serif';
+      ctx.fillStyle = '#fff';
+      ctx.textAlign = 'center';
+      ctx.fillText(item.icon + ' ' + item.label, item.x + item.w/2, item.y - 12);
+      ctx.textAlign = 'left';
+    }
+  });
 }
 
-// 自然衰减
-setInterval(() => {
-  stats.hunger = Math.max(0, stats.hunger - 1);
-  stats.happy = Math.max(0, stats.happy - 0.5);
-  stats.energy = Math.max(0, stats.energy - 0.3);
-  updateBars();
-}, 10000);
+let lastMouseX = -1, lastMouseY = -1;
+canvas.addEventListener('mousemove', (e) => {
+  const rect = canvas.getBoundingClientRect();
+  lastMouseX = (e.clientX - rect.left) * (GAME_W / rect.width);
+  lastMouseY = (e.clientY - rect.top) * (GAME_H / rect.height);
+});
 
-// 初始说话
-setTimeout(() => speak('欢迎来到我的厨房！🏠', 3000), 1000);
+// ========================================================
+// 烹饪进度条
+// ========================================================
+function drawCookProgress() {
+  if (!itemStates.stove.cooking) return;
+  const x = 310, y = 240, w = 120, h = 12;
+  ctx.fillStyle = 'rgba(0,0,0,0.5)';
+  roundRect(x, y, w, h, 6);
+  ctx.fill();
+  ctx.fillStyle = '#FF8C00';
+  roundRect(x, y, w * itemStates.stove.cookProgress / 100, h, 6);
+  ctx.fill();
+  ctx.font = '10px sans-serif';
+  ctx.fillStyle = '#fff';
+  ctx.textAlign = 'center';
+  ctx.fillText(`🍳 烹饪中 ${Math.round(itemStates.stove.cookProgress)}%`, x + w/2, y + 10);
+  ctx.textAlign = 'left';
+}
+
+// ========================================================
+// 主渲染循环
+// ========================================================
+function render() {
+  ctx.clearRect(0, 0, GAME_W, GAME_H);
+  
+  // 背景
+  if (bgLoaded) {
+    ctx.drawImage(bgImg, 0, 0, GAME_W, GAME_H);
+  } else {
+    ctx.fillStyle = '#F5F0E8';
+    ctx.fillRect(0, 0, GAME_W, GAME_H);
+  }
+  
+  // 交互高亮
+  drawHotspots();
+  
+  // 烹饪进度
+  drawCookProgress();
+  
+  // 轨迹粒子
+  pet.trail.forEach(t => {
+    ctx.globalAlpha = t.life * 0.3;
+    ctx.fillStyle = '#F0A050';
+    ctx.beginPath();
+    ctx.arc(t.x, t.y, 3, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.globalAlpha = 1;
+  });
+  
+  // 宠物
+  drawPet();
+  
+  // 粒子
+  drawParticles();
+  
+  // 浮动文字
+  drawFloatingTexts();
+  
+  // UI
+  drawUI();
+  
+  // 商店
+  drawShop();
+  
+  // 更新
+  updateGame();
+  
+  requestAnimationFrame(render);
+}
+
+// ========================================================
+// 初始化
+// ========================================================
+function init() {
+  notify('欢迎来到厨房宠物乐园！🏠', '🎉', 4000);
+  setTimeout(() => {
+    pet.emotion = '👋';
+    pet.emotionTimer = 100;
+    notify('点击厨房物品或底部按钮互动~', '💡', 5000);
+  }, 2000);
+  render();
+}
+
+// 如果图片加载失败也能启动
+setTimeout(() => { if (!bgLoaded) init(); }, 3000);
 </script>
 </body>
 </html>
