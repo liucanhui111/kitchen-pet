@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>2.5D 等距厨房 - 电子宠物背景</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { background: #f0f0f0; display: flex; justify-content: center; align-items: center; min-height: 100vh; }
+  .container { width: 900px; height: 1200px; background: #ffffff; border-radius: 12px; box-shadow: 0 8px 32px rgba(0,0,0,0.12); overflow: hidden; }
+  svg { width: 100%; height: 100%; display: block; }
+</style>
+</head>
+<body>
+<div class="container">
+<svg viewBox="0 0 900 1200" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <!-- 粘土质感纹理 -->
+    <filter id="clay" x="-2%" y="-2%" width="104%" height="104%">
+      <feTurbulence type="fractalNoise" baseFrequency="0.8" numOctaves="4" seed="2" result="noise"/>
+      <feColorMatrix type="saturate" values="0" in="noise" result="gray"/>
+      <feBlend in="SourceGraphic" in2="gray" mode="multiply"/>
+    </filter>
+    <!-- 软阴影 -->
+    <filter id="shadow" x="-15%" y="-15%" width="130%" height="130%">
+      <feGaussianBlur in="SourceAlpha" stdDeviation="6" result="b"/>
+      <feOffset dx="5" dy="8" result="o"/>
+      <feFlood flood-color="#4a3020" flood-opacity="0.15" result="c"/>
+      <feComposite in="c" in2="o" operator="in" result="s"/>
+      <feMerge><feMergeNode in="s"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+    <!-- 更重的阴影（家具） -->
+    <filter id="shadowHeavy" x="-15%" y="-15%" width="130%" height="135%">
+      <feGaussianBlur in="SourceAlpha" stdDeviation="8" result="b"/>
+      <feOffset dx="6" dy="12" result="o"/>
+      <feFlood flood-color="#3a2010" flood-opacity="0.2" result="c"/>
+      <feComposite in="c" in2="o" operator="in" result="s"/>
+      <feMerge><feMergeNode in="s"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+    <!-- 暖光渐变 -->
+    <radialGradient id="warmGlow" cx="70%" cy="35%" r="50%">
+      <stop offset="0%" stop-color="#FFE8B0" stop-opacity="0.2"/>
+      <stop offset="100%" stop-color="#FFE8B0" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+
+  <!-- ==================== 底座 ==================== -->
+  <g id="base">
+    <polygon points="450,1050 810,840 450,630 90,840" fill="#707070" stroke="#5a5a5a" stroke-width="2"/>
+    <polygon points="90,840 450,1050 450,1100 90,890" fill="#585858"/>
+    <polygon points="450,1050 810,840 810,890 450,1100" fill="#626262"/>
+  </g>
+
+  <!-- ==================== 地板 ==================== -->
+  <g id="floor">
+    <clipPath id="floorClip"><polygon points="450,1020 790,820 450,620 110,820"/></clipPath>
+    <g clip-path="url(#floorClip)">
+      <rect x="80" y="600" width="740" height="450" fill="#E8E0D8"/>
+      <!-- 菱形格纹 -->
+      <g stroke="#C8B8A0" stroke-width="2" fill="none" opacity="0.8">
+        <!-- 左斜线 -->
+        <line x1="110" y1="820" x2="450" y2="620"/>
+        <line x1="155" y1="820" x2="450" y2="646"/>
+        <line x1="200" y1="820" x2="450" y2="672"/>
+        <line x1="245" y1="820" x2="450" y2="698"/>
+        <line x1="290" y1="820" x2="450" y2="724"/>
+        <line x1="335" y1="820" x2="450" y2="750"/>
+        <line x1="380" y1="820" x2="450" y2="776"/>
+        <line x1="425" y1="820" x2="450" y2="802"/>
+        <!-- 右斜线 -->
+        <line x1="450" y1="620" x2="790" y2="820"/>
+        <line x1="450" y1="646" x2="745" y2="820"/>
+        <line x1="450" y1="672" x2="700" y2="820"/>
+        <line x1="450" y1="698" x2="655" y2="820"/>
+        <line x1="450" y1="724" x2="610" y2="820"/>
+        <line x1="450" y1="750" x2="565" y2="820"/>
+        <line x1="450" y1="776" x2="520" y2="820"/>
+      </g>
+      <!-- 菱形装饰星点 -->
+      <g fill="#D8CDB8" opacity="0.4">
+        <circle cx="280" cy="770" r="3"/><circle cx="350" cy="740" r="3"/>
+        <circle cx="420" cy="710" r="3"/><circle cx="490" cy="740" r="3"/>
+        <circle cx="560" cy="770" r="3"/><circle cx="630" cy="800" r="3"/>
+        <circle cx="220" cy="800" r="3"/><circle cx="330" cy="790" r="2.5"/>
+        <circle cx="500" cy="700" r="2.5"/><circle cx="600" cy="750" r="2.5"/>
+        <circle cx="380" cy="680" r="2.5"/><circle cx="550" cy="680" r="2.5"/>
+        <circle cx="450" cy="750" r="3"/>
+      </g>
+      <!-- 散落碎屑 -->
+      <g fill="#B8A080" opacity="0.3">
+        <ellipse cx="250" cy="810" rx="4" ry="2" transform="rotate(25,250,810)"/>
+        <ellipse cx="520" cy="808" rx="3.5" ry="1.8" transform="rotate(40,520,808)"/>
+        <ellipse cx="640" cy="812" rx="3" ry="1.5" transform="rotate(10,640,812)"/>
+        <ellipse cx="380" cy="818" rx="2.5" ry="1.2" transform="rotate(-30,380,818)"/>
+      </g>
+    </g>
+  </g>
+
+  <!-- ==================== 后墙 ==================== -->
+  <g id="walls">
+    <polygon points="110,820 110,380 450,180 450,620" fill="#F5F0E8" stroke="#E8E0D5" stroke-width="1"/>
+    <polygon points="450,620 450,180 790,380 790,820" fill="#F0EBE0" stroke="#E8E0D5" stroke-width="1"/>
+    <!-- 左墙瓷砖线 -->
+    <g stroke="#E8E0D5" stroke-width="0.5" opacity="0.35">
+      <line x1="110" y1="420" x2="450" y2="220"/><line x1="110" y1="460" x2="450" y2="260"/>
+      <line x1="110" y1="500" x2="450" y2="300"/><line x1="110" y1="540" x2="450" y2="340"/>
+      <line x1="110" y1="580" x2="450" y2="380"/><line x1="110" y1="620" x2="450" y2="420"/>
+      <line x1="110" y1="660" x2="450" y2="460"/><line x1="110" y1="700" x2="450" y2="500"/>
+      <line x1="110" y1="740" x2="450" y2="540"/><line x1="110" y1="780" x2="450" y2="580"/>
+      <line x1="190" y1="395" x2="190" y2="805"/><line x1="270" y1="345" x2="270" y2="770"/>
+      <line x1="350" y1="295" x2="350" y2="735"/><line x1="430" y1="245" x2="430" y2="700"/>
+    </g>
+    <!-- 右墙瓷砖线 -->
+    <g stroke="#E0D8D0" stroke-width="0.5" opacity="0.3">
+      <line x1="450" y1="220" x2="790" y2="420"/><line x1="450" y1="260" x2="790" y2="460"/>
+      <line x1="450" y1="300" x2="790" y2="500"/><line x1="450" y1="340" x2="790" y2="540"/>
+      <line x1="450" y1="380" x2="790" y2="580"/><line x1="450" y1="420" x2="790" y2="620"/>
+      <line x1="450" y1="460" x2="790" y2="660"/><line x1="450" y1="500" x2="790" y2="700"/>
+      <line x1="530" y1="245" x2="530" y2="700"/><line x1="610" y1="295" x2="610" y2="735"/>
+      <line x1="690" y1="345" x2="690" y2="770"/><line x1="770" y1="395" x2="770" y2="805"/>
+    </g>
+  </g>
+
+  <!-- ==================== 暖光 ==================== -->
+  <rect x="0" y="0" width="900" height="1200" fill="url(#warmGlow)" pointer-events="none"/>
+
+  <!-- ================================================================ -->
+  <!-- ==================== 第②步：薄荷绿冰箱 ==================== -->
+  <!-- ================================================================ -->
+  <g id="fridge" filter="url(#shadowHeavy)">
+    <!-- 冰箱主体 - 等距长方体 -->
+    <!-- 前面（薄荷绿） -->
+    <polygon points="140,780 140,520 260,460 260,720" fill="#A8D8C8" stroke="#90C0B0" stroke-width="1.5"/>
+    <!-- 侧面（深一点的薄荷绿） -->
+    <polygon points="260,720 260,460 310,435 310,695" fill="#90C8B5" stroke="#80B8A5" stroke-width="1"/>
+    <!-- 顶面 -->
+    <polygon points="140,520 260,460 310,435 190,495" fill="#B8E8D8" stroke="#A0D8C5" stroke-width="1"/>
+
+    <!-- 冰箱门分割线 -->
+    <line x1="150" y1="650" x2="255" y2="595" stroke="#88B8A8" stroke-width="1.5"/>
+    <!-- 冰箱把手 -->
+    <rect x="230" y="560" width="6" height="40" rx="3" fill="#707070" transform="skewY(-15) translate(0,280)"/>
+    <rect x="230" y="660" width="6" height="30" rx="3" fill="#707070" transform="skewY(-15) translate(0,230)"/>
+
+    <!-- 冰箱表面粘土肌理（细微高光） -->
+    <polygon points="155,540 175,530 175,640 155,650" fill="#B8E0D0" opacity="0.3"/>
+
+    <!-- 顶部杯碟（3个陶制杯碟） -->
+    <!-- 杯碟1 - 蓝灰色 -->
+    <ellipse cx="185" cy="490" rx="14" ry="8" fill="#8898A0" stroke="#708088" stroke-width="1"/>
+    <ellipse cx="185" cy="486" rx="10" ry="5" fill="#98A8B0"/>
+    <!-- 杯碟2 - 棕褐色 -->
+    <ellipse cx="220" cy="476" rx="12" ry="7" fill="#A08870" stroke="#887060" stroke-width="1"/>
+    <ellipse cx="220" cy="472" rx="9" ry="4.5" fill="#B09880"/>
+    <!-- 杯碟3 - 蓝灰色小碟 -->
+    <ellipse cx="250" cy="462" rx="10" ry="6" fill="#8898A0" stroke="#708088" stroke-width="1"/>
+    <ellipse cx="250" cy="459" rx="7" ry="4" fill="#98A8B0"/>
+
+    <!-- 侧面毛巾 - 蓝白格纹 -->
+    <g transform="translate(265,520)">
+      <rect x="0" y="0" width="25" height="50" rx="2" fill="#B8D0E0" stroke="#90B0C8" stroke-width="0.8" transform="skewY(-15)"/>
+      <!-- 格纹 -->
+      <line x1="5" y1="5" x2="5" y2="45" stroke="#90B0C8" stroke-width="0.5" transform="skewY(-15)"/>
+      <line x1="15" y1="2" x2="15" y2="48" stroke="#90B0C8" stroke-width="0.5" transform="skewY(-15)"/>
+      <line x1="2" y1="15" x2="23" y2="12" stroke="#90B0C8" stroke-width="0.5" transform="skewY(-15)"/>
+      <line x1="2" y1="30" x2="23" y2="27" stroke="#90B0C8" stroke-width="0.5" transform="skewY(-15)"/>
+    </g>
+    <!-- 擦手巾 - 米白色 -->
+    <g transform="translate(270,580)">
+      <rect x="0" y="0" width="20" height="35" rx="2" fill="#F0E8E0" stroke="#D8D0C8" stroke-width="0.8" transform="skewY(-15)"/>
+    </g>
+  </g>
+
+  <!-- 提示 -->
+  <text x="450" y="1150" text-anchor="middle" font-size="16" fill="#aaa">第②步：冰箱完成 | 确认后继续第③步：灶台+烤箱</text>
+
+</svg>
+</div>
+</body>
+</html>
