@@ -3,546 +3,450 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>2.5D 等距厨房 - 电子宠物背景</title>
+<title>🏠 我的厨房 - 电子宠物</title>
 <style>
-*{margin:0;padding:0}
-body{background:#f5f5f5;display:flex;justify-content:center;align-items:center;min-height:100vh;overflow:hidden}
-canvas{display:block}
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:#2a2a2a;display:flex;justify-content:center;align-items:center;min-height:100vh;font-family:'Segoe UI','PingFang SC',sans-serif;overflow:hidden}
+.game-container{position:relative;width:900px;height:1200px;border-radius:16px;overflow:hidden;box-shadow:0 20px 60px rgba(0,0,0,0.4)}
+.game-container img.bg{width:100%;height:100%;object-fit:cover;display:block}
+
+/* 可交互区域 */
+.hotspot{
+  position:absolute;
+  cursor:pointer;
+  border:2px solid transparent;
+  border-radius:12px;
+  transition:all 0.3s ease;
+  z-index:10;
+}
+.hotspot:hover{
+  border-color:rgba(168,216,200,0.7);
+  background:rgba(168,216,200,0.12);
+  box-shadow:0 0 20px rgba(168,216,200,0.3);
+  transform:scale(1.02);
+}
+.hotspot:active{
+  transform:scale(0.98);
+  background:rgba(168,216,200,0.25);
+}
+.hotspot .label{
+  position:absolute;
+  bottom:-28px;
+  left:50%;
+  transform:translateX(-50%);
+  background:rgba(0,0,0,0.7);
+  color:#fff;
+  padding:3px 10px;
+  border-radius:10px;
+  font-size:12px;
+  white-space:nowrap;
+  opacity:0;
+  transition:opacity 0.3s;
+  pointer-events:none;
+}
+.hotspot:hover .label{opacity:1}
+
+/* 宠物 */
+.pet{
+  position:absolute;
+  z-index:20;
+  transition:left 0.8s cubic-bezier(.4,0,.2,1), top 0.8s cubic-bezier(.4,0,.2,1);
+  filter:drop-shadow(0 4px 8px rgba(0,0,0,0.3));
+  cursor:pointer;
+  user-select:none;
+}
+.pet .body{
+  width:48px;height:48px;
+  background:radial-gradient(circle at 35% 35%,#FFD6A0,#F0A050);
+  border-radius:50%;
+  position:relative;
+  animation:bob 2s ease-in-out infinite;
+}
+.pet .ear-l,.pet .ear-r{
+  position:absolute;width:14px;height:18px;
+  background:#F0A050;
+  border-radius:50% 50% 0 0;
+  top:-10px;
+}
+.pet .ear-l{left:4px;transform:rotate(-15deg)}
+.pet .ear-r{right:4px;transform:rotate(15deg)}
+.pet .ear-inner{
+  width:8px;height:10px;
+  background:#FFB870;
+  border-radius:50% 50% 0 0;
+  margin:4px auto 0;
+}
+.pet .eye{
+  position:absolute;width:7px;height:8px;
+  background:#333;border-radius:50%;
+  top:16px;
+}
+.pet .eye-l{left:13px}
+.pet .eye-r{right:13px}
+.pet .eye-shine{
+  width:3px;height:3px;background:#fff;border-radius:50%;
+  position:absolute;top:1px;left:1px;
+}
+.pet .mouth{
+  position:absolute;
+  width:10px;height:5px;
+  border-bottom:2px solid #B07030;
+  border-radius:0 0 50% 50%;
+  bottom:14px;left:50%;transform:translateX(-50%);
+}
+.pet .blush{
+  position:absolute;width:8px;height:5px;
+  background:rgba(255,150,150,0.4);
+  border-radius:50%;
+  top:22px;
+}
+.pet .blush-l{left:6px}
+.pet .blush-r{right:6px}
+
+@keyframes bob{
+  0%,100%{transform:translateY(0)}
+  50%{transform:translateY(-4px)}
+}
+@keyframes heart{
+  0%{opacity:1;transform:translateY(0) scale(1)}
+  100%{opacity:0;transform:translateY(-40px) scale(1.5)}
+}
+@keyframes sparkle{
+  0%{opacity:0;transform:scale(0) rotate(0deg)}
+  50%{opacity:1;transform:scale(1) rotate(180deg)}
+  100%{opacity:0;transform:scale(0) rotate(360deg)}
+}
+
+/* 心形动画 */
+.heart{
+  position:absolute;
+  font-size:20px;
+  pointer-events:none;
+  z-index:30;
+  animation:heart 1s ease-out forwards;
+}
+
+/* 状态面板 */
+.status-panel{
+  position:absolute;
+  top:12px;left:12px;right:12px;
+  display:flex;gap:8px;
+  z-index:25;
+  pointer-events:none;
+}
+.stat{
+  background:rgba(0,0,0,0.55);
+  backdrop-filter:blur(8px);
+  color:#fff;
+  padding:6px 14px;
+  border-radius:20px;
+  font-size:13px;
+  display:flex;align-items:center;gap:6px;
+  pointer-events:auto;
+}
+.stat .bar{
+  width:60px;height:6px;
+  background:rgba(255,255,255,0.2);
+  border-radius:3px;
+  overflow:hidden;
+}
+.stat .bar-fill{
+  height:100%;border-radius:3px;
+  transition:width 0.5s ease;
+}
+.bar-hunger .bar-fill{background:linear-gradient(90deg,#FF6B6B,#FFB347)}
+.bar-happy .bar-fill{background:linear-gradient(90deg,#FFD700,#FF69B4)}
+.bar-energy .bar-fill{background:linear-gradient(90deg,#4ECDC4,#44CF6C)}
+
+/* 气泡 */
+.speech{
+  position:absolute;
+  background:rgba(255,255,255,0.95);
+  color:#333;
+  padding:8px 14px;
+  border-radius:16px;
+  font-size:13px;
+  z-index:25;
+  box-shadow:0 4px 12px rgba(0,0,0,0.15);
+  max-width:160px;
+  text-align:center;
+  animation:fadeIn 0.3s ease;
+  pointer-events:none;
+}
+.speech::after{
+  content:'';
+  position:absolute;
+  bottom:-8px;left:50%;
+  transform:translateX(-50%);
+  border:6px solid transparent;
+  border-top-color:rgba(255,255,255,0.95);
+}
+@keyframes fadeIn{
+  from{opacity:0;transform:translateY(8px)}
+  to{opacity:1;transform:translateY(0)}
+}
+
+/* 提示 */
+.hint{
+  position:absolute;
+  bottom:16px;left:50%;transform:translateX(-50%);
+  background:rgba(0,0,0,0.6);
+  color:#ccc;
+  padding:8px 20px;
+  border-radius:20px;
+  font-size:12px;
+  z-index:25;
+  pointer-events:none;
+  animation:pulse 3s ease-in-out infinite;
+}
+@keyframes pulse{
+  0%,100%{opacity:0.6}
+  50%{opacity:1}
+}
 </style>
 </head>
 <body>
-<script type="importmap">
-{
-  "imports": {
-    "three": "https://unpkg.com/three@0.164.1/build/three.module.js",
-    "three/addons/": "https://unpkg.com/three@0.164.1/examples/jsm/"
+
+<div class="game-container">
+  <!-- 游戏背景 -->
+  <img class="bg" src="bg_game.png" alt="厨房背景" />
+
+  <!-- 状态面板 -->
+  <div class="status-panel">
+    <div class="stat bar-hunger">🍎 饱食 <div class="bar"><div class="bar-fill" style="width:72%"></div></div></div>
+    <div class="stat bar-happy">💛 心情 <div class="bar"><div class="bar-fill" style="width:85%"></div></div></div>
+    <div class="stat bar-energy">⚡ 体力 <div class="bar"><div class="bar-fill" style="width:60%"></div></div></div>
+  </div>
+
+  <!-- 宠物 -->
+  <div class="pet" id="pet" style="left:400px;top:680px" onclick="petClick()">
+    <div class="body">
+      <div class="ear-l"><div class="ear-inner"></div></div>
+      <div class="ear-r"><div class="ear-inner"></div></div>
+      <div class="eye eye-l"><div class="eye-shine"></div></div>
+      <div class="eye eye-r"><div class="eye-shine"></div></div>
+      <div class="blush blush-l"></div>
+      <div class="blush blush-r"></div>
+      <div class="mouth"></div>
+    </div>
+  </div>
+
+  <!-- ===== 可交互区域 ===== -->
+
+  <!-- 冰箱 -->
+  <div class="hotspot" style="left:95px;top:310px;width:190px;height:380px" onclick="interact('fridge')">
+    <span class="label">🧊 冰箱</span>
+  </div>
+
+  <!-- 灶台 -->
+  <div class="hotspot" style="left:280px;top:260px;width:180px;height:320px" onclick="interact('stove')">
+    <span class="label">🍳 灶台</span>
+  </div>
+
+  <!-- 水槽 -->
+  <div class="hotspot" style="left:440px;top:220px;width:170px;height:350px" onclick="interact('sink')">
+    <span class="label">🚿 水槽</span>
+  </div>
+
+  <!-- 窗户 -->
+  <div class="hotspot" style="left:570px;top:130px;width:180px;height:260px" onclick="interact('window')">
+    <span class="label">🪟 窗户</span>
+  </div>
+
+  <!-- 餐桌 -->
+  <div class="hotspot" style="left:450px;top:550px;width:260px;height:200px" onclick="interact('table')">
+    <span class="label">🍽️ 餐桌</span>
+  </div>
+
+  <!-- 绿植 -->
+  <div class="hotspot" style="left:620px;top:380px;width:120px;height:130px" onclick="interact('plant')">
+    <span class="label">🌿 绿植</span>
+  </div>
+
+  <!-- 藤编灯 -->
+  <div class="hotspot" style="left:580px;top:80px;width:100px;height:120px" onclick="interact('lamp')">
+    <span class="label">💡 吊灯</span>
+  </div>
+
+  <!-- 挂钟区域 -->
+  <div class="hotspot" style="left:150px;top:120px;width:100px;height:100px" onclick="interact('clock')">
+    <span class="label">🕐 挂钟</span>
+  </div>
+
+  <!-- 置物架 -->
+  <div class="hotspot" style="left:80px;top:200px;width:160px;height:100px" onclick="interact('shelf')">
+    <span class="label">🏺 置物架</span>
+  </div>
+
+  <!-- 提示 -->
+  <div class="hint">✨ 点击厨房物品与宠物互动 | 点击地面移动宠物</div>
+</div>
+
+<script>
+const pet = document.getElementById('pet');
+let petX = 400, petY = 680;
+let stats = { hunger: 72, happy: 85, energy: 60 };
+
+// 宠物说话
+function speak(text, duration=2000) {
+  document.querySelectorAll('.speech').forEach(s => s.remove());
+  const s = document.createElement('div');
+  s.className = 'speech';
+  s.textContent = text;
+  s.style.left = (petX + 24 - 80) + 'px';
+  s.style.top = (petY - 50) + 'px';
+  document.querySelector('.game-container').appendChild(s);
+  setTimeout(() => s.remove(), duration);
+}
+
+// 冒爱心
+function hearts(count=3) {
+  for (let i = 0; i < count; i++) {
+    setTimeout(() => {
+      const h = document.createElement('div');
+      h.className = 'heart';
+      h.textContent = ['❤️','💕','💖','🧡'][Math.floor(Math.random()*4)];
+      h.style.left = (petX + 20 + Math.random()*20) + 'px';
+      h.style.top = (petY - 10) + 'px';
+      document.querySelector('.game-container').appendChild(h);
+      setTimeout(() => h.remove(), 1000);
+    }, i * 200);
   }
 }
-</script>
-<script type="module">
-import * as THREE from 'three';
 
-const W=900, H=1200;
-const scene = new THREE.Scene();
-scene.background = new THREE.Color(0xffffff);
-
-// ===== 等距正交相机 =====
-const aspect = W/H;
-const viewSize = 500;
-const camera = new THREE.OrthographicCamera(
-  -viewSize*aspect, viewSize*aspect, viewSize, -viewSize, 0.1, 2000
-);
-// 等距角度
-camera.position.set(600, 600, 600);
-camera.lookAt(180, 80, 120);
-
-const renderer = new THREE.WebGLRenderer({antialias:true, alpha:false});
-renderer.setSize(W, H);
-renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-renderer.shadowMap.enabled = true;
-renderer.shadowMap.type = THREE.PCFSoftShadowMap;
-renderer.toneMapping = THREE.ACESFilmicToneMapping;
-renderer.toneMappingExposure = 1.1;
-document.body.appendChild(renderer.domElement);
-
-// ===== 材质 =====
-const mat = {
-  // 薄荷绿（冰箱、橱柜）
-  mintGreen: new THREE.MeshStandardMaterial({color:0xA8D8C8, roughness:0.85, metalness:0.02}),
-  mintGreenDark: new THREE.MeshStandardMaterial({color:0x90C8B5, roughness:0.85, metalness:0.02}),
-  mintGreenLight: new THREE.MeshStandardMaterial({color:0xB8E8D8, roughness:0.85, metalness:0.02}),
-  // 奶白色（台面、墙面）
-  cream: new THREE.MeshStandardMaterial({color:0xF5F0E8, roughness:0.8, metalness:0.01}),
-  creamDark: new THREE.MeshStandardMaterial({color:0xE8E0D8, roughness:0.8, metalness:0.01}),
-  // 深灰（烤箱、煎锅）
-  darkGray: new THREE.MeshStandardMaterial({color:0x606060, roughness:0.6, metalness:0.3}),
-  darkGray2: new THREE.MeshStandardMaterial({color:0x505050, roughness:0.6, metalness:0.3}),
-  // 金属
-  metal: new THREE.MeshStandardMaterial({color:0xB0B0B0, roughness:0.3, metalness:0.7}),
-  metalDark: new THREE.MeshStandardMaterial({color:0x808080, roughness:0.4, metalness:0.6}),
-  // 深棕木（桌子、椅子）
-  darkWood: new THREE.MeshStandardMaterial({color:0x6B4E3D, roughness:0.75, metalness:0.02}),
-  // 浅木色（椅子）
-  lightWood: new THREE.MeshStandardMaterial({color:0xC8A882, roughness:0.7, metalness:0.02}),
-  lightWoodDark: new THREE.MeshStandardMaterial({color:0xB89872, roughness:0.7, metalness:0.02}),
-  // 地板
-  floor: new THREE.MeshStandardMaterial({color:0xE8E0D8, roughness:0.9, metalness:0}),
-  // 瓷砖墙
-  wallL: new THREE.MeshStandardMaterial({color:0xF5F0E8, roughness:0.85, metalness:0}),
-  wallR: new THREE.MeshStandardMaterial({color:0xF0EBE0, roughness:0.85, metalness:0}),
-  // 底座
-  base: new THREE.MeshStandardMaterial({color:0x707070, roughness:0.9, metalness:0.1}),
-  baseDark: new THREE.MeshStandardMaterial({color:0x585858, roughness:0.9, metalness:0.1}),
-  // 窗帘橙色
-  orange: new THREE.MeshStandardMaterial({color:0xE8985A, roughness:0.8, metalness:0}),
-  // 蓝白毛巾
-  towel: new THREE.MeshStandardMaterial({color:0xB8D0E0, roughness:0.9, metalness:0}),
-  towelWhite: new THREE.MeshStandardMaterial({color:0xF0E8E0, roughness:0.9, metalness:0}),
-  // 陶制器具
-  pottery: new THREE.MeshStandardMaterial({color:0x8898A0, roughness:0.85, metalness:0.05}),
-  potteryBrown: new THREE.MeshStandardMaterial({color:0xA08870, roughness:0.85, metalness:0.05}),
-  // 面包
-  bread: new THREE.MeshStandardMaterial({color:0xE0B870, roughness:0.9, metalness:0}),
-  breadDark: new THREE.MeshStandardMaterial({color:0xD4A860, roughness:0.9, metalness:0}),
-  // 白瓷
-  whitePorcelain: new THREE.MeshStandardMaterial({color:0xF0F0F0, roughness:0.5, metalness:0.1}),
-  // 绿植
-  leaf: new THREE.MeshStandardMaterial({color:0x7A9E5A, roughness:0.8, metalness:0}),
-  leafDark: new THREE.MeshStandardMaterial({color:0x6B8E50, roughness:0.8, metalness:0}),
-  // 藤编
-  rattan: new THREE.MeshStandardMaterial({color:0xC8A870, roughness:0.85, metalness:0}),
-  rattanLight: new THREE.MeshStandardMaterial({color:0xD8B880, roughness:0.85, metalness:0}),
-  // 花盆
-  pot: new THREE.MeshStandardMaterial({color:0xF0E0D0, roughness:0.85, metalness:0}),
-  potRim: new THREE.MeshStandardMaterial({color:0xC89070, roughness:0.85, metalness:0}),
-  // 鸡蛋
-  egg: new THREE.MeshStandardMaterial({color:0xF5F0E0, roughness:0.7, metalness:0.02}),
-  // 土豆
-  potato: new THREE.MeshStandardMaterial({color:0xC8A860, roughness:0.9, metalness:0}),
-  // 咖啡
-  coffee: new THREE.MeshStandardMaterial({color:0x6B4E3D, roughness:0.4, metalness:0.1}),
-  // 窗玻璃
-  glass: new THREE.MeshStandardMaterial({color:0xE8F0F8, roughness:0.1, metalness:0.05, transparent:true, opacity:0.7}),
-  // 窗框
-  windowFrame: new THREE.MeshStandardMaterial({color:0xD0D8E0, roughness:0.7, metalness:0.1}),
-  // 咖啡机
-  coffeeMachine: new THREE.MeshStandardMaterial({color:0x404040, roughness:0.5, metalness:0.4}),
-};
-
-// ===== 工具函数 =====
-function box(w,h,d,material,x,y,z){
-  const geo=new THREE.BoxGeometry(w,h,d);
-  const mesh=new THREE.Mesh(geo,material);
-  mesh.position.set(x+w/2, y+h/2, z+d/2);
-  mesh.castShadow=true;mesh.receiveShadow=true;
-  scene.add(mesh);
-  return mesh;
-}
-function cyl(rTop,rBot,h,seg,material,x,y,z){
-  const geo=new THREE.CylinderGeometry(rTop,rBot,h,seg);
-  const mesh=new THREE.Mesh(geo,material);
-  mesh.position.set(x, y+h/2, z);
-  mesh.castShadow=true;mesh.receiveShadow=true;
-  scene.add(mesh);
-  return mesh;
-}
-function sphere(r,material,x,y,z){
-  const geo=new THREE.SphereGeometry(r,16,12);
-  const mesh=new THREE.Mesh(geo,material);
-  mesh.position.set(x,y,z);
-  mesh.castShadow=true;mesh.receiveShadow=true;
-  scene.add(mesh);
-  return mesh;
+// 更新状态条
+function updateBars() {
+  document.querySelector('.bar-hunger .bar-fill').style.width = stats.hunger + '%';
+  document.querySelector('.bar-happy .bar-fill').style.width = stats.happy + '%';
+  document.querySelector('.bar-energy .bar-fill').style.width = stats.energy + '%';
 }
 
-// ========================================================
-// ==================== 场景构建 ====================
-// ========================================================
+// 互动
+function interact(item) {
+  const msgs = {
+    fridge: [
+      '打开了冰箱，好香！🍎',
+      '冰箱里有好多好吃的~',
+      '偷吃了点零食，饱食+15！',
+      '帮你整理了一下冰箱 🧊'
+    ],
+    stove: [
+      '正在做饭呢！小心烫~ 🍳',
+      '锅里咕嘟咕嘟冒泡泡~',
+      '做了一道拿手好菜！',
+      '灶台好暖和... 🔥'
+    ],
+    sink: [
+      '哗啦啦~在洗碗 🚿',
+      '水好凉快！玩水真开心~',
+      '把碗洗得干干净净！✨',
+      '泡泡好多！好好玩~'
+    ],
+    window: [
+      '外面天气好好呀~ ☀️',
+      '看到小鸟在飞！🐦',
+      '风吹进来好舒服~',
+      '窗外的风景真美！'
+    ],
+    table: [
+      '餐桌上的面包好香！🍞',
+      '坐下来喝杯咖啡吧~ ☕',
+      '一起吃早餐吧！',
+      '这个位置阳光最好~'
+    ],
+    plant: [
+      '绿植长得好好！🌿',
+      '给植物浇了点水~',
+      '叶子好绿好漂亮！',
+      '闻到了泥土的清香~'
+    ],
+    lamp: [
+      '吊灯好温馨~ 💡',
+      '藤编的灯罩好有质感！',
+      '灯光暖暖的~好舒服',
+      '光影摇摇晃晃好好看~'
+    ],
+    clock: [
+      '滴答滴答~时间在走 🕐',
+      '已经这么晚了吗！',
+      '挂钟好复古好好看~',
+      '要按时吃饭哦！'
+    ],
+    shelf: [
+      '架子上的罐子好可爱 🏺',
+      '这些杯子都是手工的呢~',
+      '闻到了陶土的味道~',
+      '帮你擦了擦置物架！'
+    ]
+  };
 
-// ----- 底座 -----
-box(500,30,400, mat.base, 0,-30,0);
-box(500,5,400, mat.baseDark, 0,0,0);
+  const pool = msgs[item] || ['~'];
+  const msg = pool[Math.floor(Math.random() * pool.length)];
 
-// ----- 地板 -----
-box(480,2,380, mat.floor, 10,2,10);
+  // 根据物品移动宠物到对应位置
+  const positions = {
+    fridge: {x:160, y:580},
+    stove: {x:340, y:520},
+    sink: {x:490, y:480},
+    window: {x:620, y:350},
+    table: {x:530, y:650},
+    plant: {x:660, y:500},
+    lamp: {x:620, y:250},
+    clock: {x:180, y:280},
+    shelf: {x:140, y:380}
+  };
 
-// ----- 菱形格纹地板纹理（用平面叠加）-----
-const floorCanvas = document.createElement('canvas');
-floorCanvas.width=512;floorCanvas.height=512;
-const fctx=floorCanvas.getContext('2d');
-fctx.fillStyle='#E8E0D8';fctx.fillRect(0,0,512,512);
-fctx.strokeStyle='#C8B8A0';fctx.lineWidth=2;
-const step=50;
-for(let i=0;i<12;i++){
-  fctx.beginPath();fctx.moveTo(i*step,0);fctx.lineTo(i*step,512);fctx.stroke();
-  fctx.beginPath();fctx.moveTo(0,i*step);fctx.lineTo(512,i*step);fctx.stroke();
-}
-for(let i=0;i<11;i++){
-  for(let j=0;j<11;j++){
-    if((i+j)%3===0){
-      fctx.fillStyle='rgba(216,205,184,0.3)';
-      fctx.beginPath();fctx.arc(i*step+step/2,j*step+step/2,3,0,Math.PI*2);fctx.fill();
-    }
+  const pos = positions[item];
+  if (pos) {
+    petX = pos.x;
+    petY = pos.y;
+    pet.style.left = petX + 'px';
+    pet.style.top = petY + 'px';
   }
-}
-const floorTex=new THREE.CanvasTexture(floorCanvas);
-floorTex.wrapS=floorTex.wrapT=THREE.RepeatWrapping;
-floorTex.repeat.set(2,2);
-const floorPlane=new THREE.Mesh(
-  new THREE.PlaneGeometry(480,380),
-  new THREE.MeshStandardMaterial({map:floorTex,roughness:0.9})
-);
-floorPlane.rotation.x=-Math.PI/2;
-floorPlane.position.set(250,2.5,200);
-floorPlane.receiveShadow=true;
-scene.add(floorPlane);
 
-// ----- 左墙 -----
-const wallLGeo=new THREE.PlaneGeometry(500,380);
-const wallLMesh=new THREE.Mesh(wallLGeo, mat.wallL);
-wallLMesh.position.set(250,192,0);
-wallLMesh.receiveShadow=true;
-scene.add(wallLMesh);
+  setTimeout(() => {
+    speak(msg);
+    hearts(2);
 
-// ----- 右墙 -----
-const wallRGeo=new THREE.PlaneGeometry(400,380);
-const wallRMesh=new THREE.Mesh(wallRGeo, mat.wallR);
-wallRMesh.position.set(500,192,200);
-wallRMesh.rotation.y=-Math.PI/2;
-wallRMesh.receiveShadow=true;
-scene.add(wallRMesh);
-
-// ----- 墙面瓷砖纹理 -----
-const tileCanvas=document.createElement('canvas');
-tileCanvas.width=256;tileCanvas.height=256;
-const tctx=tileCanvas.getContext('2d');
-tctx.fillStyle='#F5F0E8';tctx.fillRect(0,0,256,256);
-tctx.strokeStyle='rgba(200,192,180,0.3)';tctx.lineWidth=0.5;
-for(let i=0;i<8;i++){
-  tctx.beginPath();tctx.moveTo(i*32,0);tctx.lineTo(i*32,256);tctx.stroke();
-  tctx.beginPath();tctx.moveTo(0,i*32);tctx.lineTo(256,i*32);tctx.stroke();
-}
-const tileTex=new THREE.CanvasTexture(tileCanvas);
-tileTex.wrapS=tileTex.wrapT=THREE.RepeatWrapping;
-tileTex.repeat.set(4,3);
-wallLMesh.material=new THREE.MeshStandardMaterial({map:tileTex,roughness:0.85});
-wallRMesh.material=new THREE.MeshStandardMaterial({map:tileTex,roughness:0.85});
-
-// ========================================================
-// ==================== 冰箱（左侧）==================== ========================================================
-// 主体
-box(90,280,70, mat.mintGreen, 30,4,20);
-// 侧面
-box(10,280,70, mat.mintGreenDark, 120,4,20);
-// 顶面
-box(100,8,78, mat.mintGreenLight, 30,284,16);
-// 门分割线
-box(90,2,2, mat.mintGreenDark, 30,160,90);
-// 上门把手
-box(4,30,4, mat.metalDark, 105,200,90);
-// 下门把手
-box(4,25,4, mat.metalDark, 105,90,90);
-// 高光条
-box(8,200,1, new THREE.MeshStandardMaterial({color:0xC0F0E0,roughness:0.8,transparent:true,opacity:0.2}), 35,50,91);
-
-// 顶部杯碟
-cyl(10,10,4,16,mat.pottery, 55,292,40);
-cyl(8,8,3,16,mat.potteryBrown, 78,292,35);
-cyl(7,7,3,16,mat.pottery, 98,292,30);
-
-// 侧面毛巾
-box(20,40,2, mat.towel, 122,150,35);
-box(15,30,2, mat.towelWhite, 124,100,38);
-
-// ========================================================
-// ==================== 灶台+烤箱 ====================
-// ========================================================
-// 台面
-box(130,180,90, mat.cream, 140,4,10);
-// 侧面
-box(10,180,90, mat.creamDark, 270,4,10);
-// 台面顶
-box(140,6,96, mat.cream, 140,184,7);
-
-// 烤箱门
-box(110,80,4, mat.darkGray, 150,50,100);
-// 烤箱玻璃窗
-box(90,55,2, new THREE.MeshStandardMaterial({color:0x404040,roughness:0.3,metalness:0.2}), 160,60,103);
-// 烤箱内部微光
-box(85,48,1, new THREE.MeshStandardMaterial({color:0x504840,roughness:0.9,emissive:0x201008,emissiveIntensity:0.3}), 162,63,105);
-
-// 4个旋钮
-for(let i=0;i<4;i++){
-  cyl(5,5,4,12,mat.metalDark, 158+i*25,145,100);
-  cyl(2,2,1,12,mat.metal, 158+i*25,149,100);
+    // 状态变化
+    if (item === 'fridge') { stats.hunger = Math.min(100, stats.hunger + 15); }
+    if (item === 'stove') { stats.hunger = Math.min(100, stats.hunger + 10); stats.energy = Math.max(0, stats.energy - 5); }
+    if (item === 'table') { stats.hunger = Math.min(100, stats.hunger + 8); stats.happy = Math.min(100, stats.happy + 5); }
+    if (item === 'plant' || item === 'window') { stats.happy = Math.min(100, stats.happy + 10); }
+    if (item === 'lamp' || item === 'shelf') { stats.happy = Math.min(100, stats.happy + 5); }
+    updateBars();
+  }, 500);
 }
 
-// 烤箱布巾
-box(35,15,2, mat.towelWhite, 165,10,100);
+// 点击地面移动宠物
+document.querySelector('.game-container').addEventListener('click', function(e) {
+  if (e.target.closest('.hotspot') || e.target.closest('.pet')) return;
+  const rect = this.getBoundingClientRect();
+  petX = Math.max(30, Math.min(820, e.clientX - rect.left - 24));
+  petY = Math.max(200, Math.min(900, e.clientY - rect.top - 24));
+  pet.style.left = petX + 'px';
+  pet.style.top = petY + 'px';
+});
 
-// 抽油烟机
-box(120,70,85, mat.cream, 145,190,10);
-box(10,70,85, mat.creamDark, 265,190,10);
-box(125,5,90, new THREE.MeshStandardMaterial({color:0xE8E0D5,roughness:0.8}), 143,260,8);
-
-// 小奶锅
-cyl(14,14,18,16,mat.metal, 180,192,45);
-cyl(15,15,2,16,mat.metal, 179,210,44);
-box(3,3,18,mat.metalDark, 194,200,50);
-
-// 不锈钢水壶
-cyl(10,10,20,16,mat.metal, 225,192,35);
-cyl(12,12,2,16,mat.metal, 224,212,34);
-sphere(3,mat.metal, 225,215,35);
-// 壶嘴
-box(10,3,3,mat.metal, 235,205,32);
-
-// ========================================================
-// ==================== 水槽+橱柜 ====================
-// ========================================================
-// 下柜（薄荷绿）
-box(110,180,90, mat.mintGreen, 280,4,10);
-box(10,180,90, mat.mintGreenDark, 390,4,10);
-box(115,6,96, mat.mintGreenLight, 278,184,7);
-
-// 水槽凹陷
-box(70,3,40, mat.metalDark, 295,182,20);
-box(65,8,35, new THREE.MeshStandardMaterial({color:0x787878,roughness:0.4,metalness:0.5}), 298,175,22);
-
-// 水龙头
-cyl(3,3,40,8,mat.metal, 330,185,35);
-box(15,3,3,mat.metal, 328,225,33);
-cyl(2,2,3,8,mat.metal, 340,222,33);
-
-// 吊柜
-box(105,110,80, mat.mintGreen, 285,270,10);
-box(10,110,80, mat.mintGreenDark, 390,270,10);
-box(110,5,85, mat.mintGreenLight, 283,380,8);
-// 玻璃门高光
-box(40,60,1, new THREE.MeshStandardMaterial({color:0xC8F0E0,roughness:0.3,transparent:true,opacity:0.2}), 295,290,91);
-
-// 内部碗碟
-cyl(8,8,3,12,mat.whitePorcelain, 310,290,40);
-cyl(7,7,3,12,mat.creamDark, 330,290,35);
-
-// 搁板上物品
-// 白色水壶
-cyl(6,6,12,12,mat.whitePorcelain, 300,275,30);
-// 咖啡机
-box(18,20,15, mat.coffeeMachine, 340,275,25);
-cyl(2,2,2,8,mat.metal, 349,295,32);
-
-// ========================================================
-// ==================== 窗户 ====================
-// ========================================================
-// 窗户玻璃
-box(140,150,2, mat.glass, 500,160,150);
-// 窗框
-box(140,3,2, mat.windowFrame, 500,160,150);
-box(140,3,2, mat.windowFrame, 500,307,150);
-box(3,150,2, mat.windowFrame, 500,160,150);
-box(3,150,2, mat.windowFrame, 637,160,150);
-// 十字窗框
-box(70,3,2, mat.windowFrame, 500,232,151);
-box(3,75,2, mat.windowFrame, 568,160,151);
-
-// 窗外绿植模糊
-sphere(20, new THREE.MeshStandardMaterial({color:0x8AAE60,roughness:0.9,transparent:true,opacity:0.3}), 570,260,148);
-
-// 橙白条纹窗帘（左侧）
-box(25,90,3, mat.orange, 500,230,153);
-// 条纹（白色叠加）
-for(let z=235;z<315;z+=25){
-  box(25,10,1, new THREE.MeshStandardMaterial({color:0xF5F0E8,roughness:0.8,transparent:true,opacity:0.4}), 500,z,155);
+// 点击宠物
+function petClick() {
+  const reactions = ['摸摸头~好舒服！','汪！💕','嘿嘿~','最喜欢你了！','再摸摸~','蹭蹭~🧡'];
+  speak(reactions[Math.floor(Math.random()*reactions.length)]);
+  hearts(4);
+  stats.happy = Math.min(100, stats.happy + 8);
+  updateBars();
 }
 
-// 右侧窗帘
-box(22,80,3, mat.orange, 638,240,153);
-for(let z=245;z<315;z+=22){
-  box(22,8,1, new THREE.MeshStandardMaterial({color:0xF5F0E8,roughness:0.8,transparent:true,opacity:0.4}), 638,z,155);
-}
+// 自然衰减
+setInterval(() => {
+  stats.hunger = Math.max(0, stats.hunger - 1);
+  stats.happy = Math.max(0, stats.happy - 0.5);
+  stats.energy = Math.max(0, stats.energy - 0.3);
+  updateBars();
+}, 10000);
 
-// 藤编吊灯
-cyl(1,1,35,8,mat.rattan, 570,320,160);
-cyl(16,12,15,12,mat.rattanLight, 562,340,155);
-cyl(18,14,3,12,mat.rattan, 561,355,154);
-// 灯光效果
-const lampLight=new THREE.PointLight(0xFFD080,0.5,100);
-lampLight.position.set(570,345,160);
-scene.add(lampLight);
-
-// 窗台小物件
-box(12,8,8, mat.creamDark, 520,155,152);
-box(10,6,6, mat.rattan, 560,155,152);
-
-// ========================================================
-// ==================== 餐桌椅 ====================
-// ========================================================
-// 餐桌桌面
-box(120,5,85, new THREE.MeshStandardMaterial({color:0xD8D0C8,roughness:0.7}), 340,100,230);
-// 桌腿
-box(4,95,4, mat.darkWood, 345,5,235);
-box(4,95,4, mat.darkWood, 452,5,235);
-box(4,95,4, mat.darkWood, 345,5,307);
-box(4,95,4, mat.darkWood, 452,5,307);
-
-// 面包餐盘
-cyl(16,16,3,16,mat.whitePorcelain, 385,105,260);
-// 面包片
-cyl(10,10,4,12,mat.bread, 383,108,258);
-cyl(8,8,2,12,mat.breadDark, 383,112,258);
-
-// 咖啡杯
-cyl(8,8,10,12,mat.whitePorcelain, 420,105,255);
-cyl(6,6,2,12,mat.creamDark, 420,115,255);
-// 咖啡液面
-cyl(5,5,1,12,mat.coffee, 420,116,255);
-// 杯把
-const cupHandle=new THREE.Mesh(
-  new THREE.TorusGeometry(4,1.2,8,12,Math.PI),
-  mat.whitePorcelain
-);
-cupHandle.position.set(428,110,255);
-cupHandle.rotation.z=Math.PI/2;
-cupHandle.rotation.y=Math.PI/2;
-scene.add(cupHandle);
-
-// 调料罐
-box(8,12,8, mat.darkGray, 445,105,275);
-cyl(5,5,2,12,mat.metalDark, 446,117,276);
-
-// 椅子1（浅木色）
-box(30,35,25, mat.lightWood, 310,5,240);
-box(5,55,25, mat.lightWoodDark, 310,40,240);
-// 编织坐垫
-box(28,3,23, new THREE.MeshStandardMaterial({color:0xE8D8C0,roughness:0.9}), 311,40,241);
-
-// 椅子2（浅木色）
-box(28,30,22, mat.lightWood, 465,5,240);
-box(5,50,22, mat.lightWoodDark, 490,35,240);
-
-// 椅子3（深木色+藤编坐篮+鸡蛋）
-box(25,25,20, mat.darkWood, 385,5,315);
-// 藤编坐篮
-cyl(12,10,8,12,mat.rattanLight, 397,30,325);
-// 鸡蛋
-sphere(4,mat.egg, 393,37,322);
-sphere(3.5,mat.egg, 400,37,328);
-sphere(3,mat.egg, 396,39,325);
-
-// ========================================================
-// ==================== 墙面挂件 ====================
-// ========================================================
-// 左上角深木色置物架
-box(85,6,18, mat.darkWood, 35,240,2);
-box(85,6,18, mat.darkWood, 35,270,2);
-
-// 陶制锅具
-cyl(12,12,8,12,mat.pottery, 55,248,8);
-cyl(10,10,6,12,mat.potteryBrown, 80,248,8);
-cyl(8,8,5,12,mat.pottery, 100,248,8);
-// 小罐
-box(10,12,10,mat.potteryBrown, 115,248,5);
-cyl(6,6,2,12,mat.pottery, 117,260,6);
-
-// 金属汤勺
-cyl(2,2,35,8,mat.metal, 195,175,3);
-sphere(5,mat.metal, 195,210,3);
-
-// 锅铲
-box(8,12,2,mat.metal, 215,195,3);
-cyl(2,2,25,8,mat.metalDark, 219,170,4);
-
-// 小煎锅
-cyl(14,14,5,16,mat.darkGray2, 248,180,3);
-box(18,3,3,mat.darkGray, 262,180,2);
-
-// 藤蔓绿植（从置物架垂下）
-function addVine(x,y,z){
-  const curve=new THREE.QuadraticBezierCurve3(
-    new THREE.Vector3(x,y,z),
-    new THREE.Vector3(x-10,y-15,z+5),
-    new THREE.Vector3(x-5,y-35,z+8)
-  );
-  const tubeGeo=new THREE.TubeGeometry(curve,12,1.5,6,false);
-  const vine=new THREE.Mesh(tubeGeo,mat.leafDark);
-  vine.castShadow=true;scene.add(vine);
-
-  // 叶子
-  for(let i=0;i<5;i++){
-    const t=i/5;
-    const pt=curve.getPoint(t);
-    const leafGeo=new THREE.SphereGeometry(4,8,6);
-    leafGeo.scale(1.5,0.5,1);
-    const leafMesh=new THREE.Mesh(leafGeo, i%2===0?mat.leaf:mat.leafDark);
-    leafMesh.position.copy(pt);
-    leafMesh.position.x+=Math.sin(i*1.5)*6;
-    leafMesh.position.z+=Math.cos(i*1.2)*4;
-    leafMesh.rotation.z=(Math.random()-0.5)*0.8;
-    leafMesh.castShadow=true;
-    scene.add(leafMesh);
-  }
-}
-addVine(200,250,5);
-
-// ========================================================
-// ==================== 左下角藤编容器+土豆 ====================
-// ========================================================
-cyl(22,18,20,12,mat.rattan, 65,4,350);
-// 土豆
-sphere(7,mat.potato, 58,22,348);
-sphere(6,mat.potato, 70,22,345);
-sphere(5.5,mat.potato, 63,26,340);
-
-// ========================================================
-// ==================== 小台面+面包 ====================
-// ========================================================
-box(30,35,22, mat.creamDark, 295,5,190);
-cyl(9,9,4,12,mat.bread, 308,40,200);
-
-// ========================================================
-// ==================== 窗台盆栽 ====================
-// ========================================================
-box(15,22,15, mat.pot, 538,155,155);
-box(15,3,15, mat.potRim, 538,177,155);
-// 叶子
-for(let i=0;i<5;i++){
-  const leafGeo=new THREE.ConeGeometry(3,15,4);
-  const leafMesh=new THREE.Mesh(leafGeo, i%2===0?mat.leaf:mat.leafDark);
-  leafMesh.position.set(545+Math.sin(i)*4, 185+i*3, 162+Math.cos(i)*3);
-  leafMesh.rotation.z=(Math.random()-0.5)*0.4;
-  leafMesh.castShadow=true;
-  scene.add(leafMesh);
-}
-
-// ========================================================
-// ==================== 灯光 ====================
-// ========================================================
-
-// 环境光（暖色）
-const ambient=new THREE.AmbientLight(0xFFF0E0,0.5);
-scene.add(ambient);
-
-// 主光源（从右上窗户方向，暖黄色）
-const mainLight=new THREE.DirectionalLight(0xFFE8C0,1.2);
-mainLight.position.set(500,500,400);
-mainLight.castShadow=true;
-mainLight.shadow.mapSize.width=2048;
-mainLight.shadow.mapSize.height=2048;
-mainLight.shadow.camera.near=10;
-mainLight.shadow.camera.far=1500;
-mainLight.shadow.camera.left=-400;
-mainLight.shadow.camera.right=400;
-mainLight.shadow.camera.top=400;
-mainLight.shadow.camera.bottom=-200;
-mainLight.shadow.bias=-0.001;
-mainLight.shadow.radius=4;
-scene.add(mainLight);
-
-// 补光（从左侧，冷色）
-const fillLight=new THREE.DirectionalLight(0xC0D8F0,0.3);
-fillLight.position.set(-300,300,200);
-scene.add(fillLight);
-
-// 顶部柔光
-const topLight=new THREE.DirectionalLight(0xFFF8F0,0.4);
-topLight.position.set(200,600,200);
-scene.add(topLight);
-
-// ========================================================
-// ==================== 渲染 ====================
-// ========================================================
-renderer.render(scene, camera);
-
-// 导出为图片
-const link=document.createElement('a');
-link.download='kitchen_2.5d.png';
-link.href=renderer.domElement.toDataURL('image/png');
-link.textContent='下载高清图片';
-link.style.cssText='position:fixed;bottom:20px;right:20px;padding:12px 24px;background:#A8D8C8;color:#333;text-decoration:none;border-radius:8px;font-family:sans-serif;font-size:14px;z-index:999;box-shadow:0 4px 12px rgba(0,0,0,0.15)';
-document.body.appendChild(link);
-
-console.log('Rendered');
+// 初始说话
+setTimeout(() => speak('欢迎来到我的厨房！🏠', 3000), 1000);
 </script>
 </body>
 </html>
