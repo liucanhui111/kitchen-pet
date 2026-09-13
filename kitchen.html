@@ -5,476 +5,544 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>2.5D 等距厨房 - 电子宠物背景</title>
 <style>
-  * { margin: 0; padding: 0; box-sizing: border-box; }
-  body { background: #f0f0f0; display: flex; justify-content: center; align-items: center; min-height: 100vh; }
-  .container { width: 900px; height: 1200px; background: #ffffff; border-radius: 12px; box-shadow: 0 8px 32px rgba(0,0,0,0.12); overflow: hidden; }
-  svg { width: 100%; height: 100%; display: block; }
+*{margin:0;padding:0}
+body{background:#f5f5f5;display:flex;justify-content:center;align-items:center;min-height:100vh;overflow:hidden}
+canvas{display:block}
 </style>
 </head>
 <body>
-<div class="container">
-<svg viewBox="0 0 900 1200" xmlns="http://www.w3.org/2000/svg">
-  <defs>
-    <filter id="clay" x="-2%" y="-2%" width="104%" height="104%">
-      <feTurbulence type="fractalNoise" baseFrequency="0.8" numOctaves="4" seed="2" result="noise"/>
-      <feColorMatrix type="saturate" values="0" in="noise" result="gray"/>
-      <feBlend in="SourceGraphic" in2="gray" mode="multiply"/>
-    </filter>
-    <filter id="shadow" x="-15%" y="-15%" width="130%" height="130%">
-      <feGaussianBlur in="SourceAlpha" stdDeviation="6" result="b"/>
-      <feOffset dx="5" dy="8" result="o"/>
-      <feFlood flood-color="#4a3020" flood-opacity="0.15" result="c"/>
-      <feComposite in="c" in2="o" operator="in" result="s"/>
-      <feMerge><feMergeNode in="s"/><feMergeNode in="SourceGraphic"/></feMerge>
-    </filter>
-    <filter id="shadowH" x="-15%" y="-15%" width="130%" height="135%">
-      <feGaussianBlur in="SourceAlpha" stdDeviation="8" result="b"/>
-      <feOffset dx="6" dy="12" result="o"/>
-      <feFlood flood-color="#3a2010" flood-opacity="0.2" result="c"/>
-      <feComposite in="c" in2="o" operator="in" result="s"/>
-      <feMerge><feMergeNode in="s"/><feMergeNode in="SourceGraphic"/></feMerge>
-    </filter>
-    <filter id="softGlow" x="-30%" y="-30%" width="160%" height="160%">
-      <feGaussianBlur in="SourceGraphic" stdDeviation="3"/>
-    </filter>
-    <radialGradient id="warmGlow" cx="70%" cy="35%" r="50%">
-      <stop offset="0%" stop-color="#FFE8B0" stop-opacity="0.18"/>
-      <stop offset="100%" stop-color="#FFE8B0" stop-opacity="0"/>
-    </radialGradient>
-    <radialGradient id="lampGlow" cx="50%" cy="50%" r="50%">
-      <stop offset="0%" stop-color="#FFD080" stop-opacity="0.4"/>
-      <stop offset="100%" stop-color="#FFD080" stop-opacity="0"/>
-    </radialGradient>
-  </defs>
+<script type="importmap">
+{
+  "imports": {
+    "three": "https://unpkg.com/three@0.164.1/build/three.module.js",
+    "three/addons/": "https://unpkg.com/three@0.164.1/examples/jsm/"
+  }
+}
+</script>
+<script type="module">
+import * as THREE from 'three';
 
-  <!-- ==================== 底座 ==================== -->
-  <g id="base">
-    <polygon points="450,1050 810,840 450,630 90,840" fill="#707070" stroke="#5a5a5a" stroke-width="2"/>
-    <polygon points="90,840 450,1050 450,1100 90,890" fill="#585858"/>
-    <polygon points="450,1050 810,840 810,890 450,1100" fill="#626262"/>
-  </g>
+const W=900, H=1200;
+const scene = new THREE.Scene();
+scene.background = new THREE.Color(0xffffff);
 
-  <!-- ==================== 地板 ==================== -->
-  <g id="floor">
-    <clipPath id="floorClip"><polygon points="450,1020 790,820 450,620 110,820"/></clipPath>
-    <g clip-path="url(#floorClip)">
-      <rect x="80" y="600" width="740" height="450" fill="#E8E0D8"/>
-      <g stroke="#C8B8A0" stroke-width="2" fill="none" opacity="0.8">
-        <line x1="110" y1="820" x2="450" y2="620"/><line x1="155" y1="820" x2="450" y2="646"/>
-        <line x1="200" y1="820" x2="450" y2="672"/><line x1="245" y1="820" x2="450" y2="698"/>
-        <line x1="290" y1="820" x2="450" y2="724"/><line x1="335" y1="820" x2="450" y2="750"/>
-        <line x1="380" y1="820" x2="450" y2="776"/><line x1="425" y1="820" x2="450" y2="802"/>
-        <line x1="450" y1="620" x2="790" y2="820"/><line x1="450" y1="646" x2="745" y2="820"/>
-        <line x1="450" y1="672" x2="700" y2="820"/><line x1="450" y1="698" x2="655" y2="820"/>
-        <line x1="450" y1="724" x2="610" y2="820"/><line x1="450" y1="750" x2="565" y2="820"/>
-        <line x1="450" y1="776" x2="520" y2="820"/>
-      </g>
-      <g fill="#D8CDB8" opacity="0.4">
-        <circle cx="280" cy="770" r="3"/><circle cx="350" cy="740" r="3"/>
-        <circle cx="420" cy="710" r="3"/><circle cx="490" cy="740" r="3"/>
-        <circle cx="560" cy="770" r="3"/><circle cx="630" cy="800" r="3"/>
-        <circle cx="220" cy="800" r="3"/><circle cx="450" cy="750" r="3"/>
-      </g>
-      <g fill="#B8A080" opacity="0.3">
-        <ellipse cx="250" cy="810" rx="4" ry="2" transform="rotate(25,250,810)"/>
-        <ellipse cx="520" cy="808" rx="3.5" ry="1.8" transform="rotate(40,520,808)"/>
-        <ellipse cx="640" cy="812" rx="3" ry="1.5" transform="rotate(10,640,812)"/>
-        <ellipse cx="380" cy="818" rx="2.5" ry="1.2" transform="rotate(-30,380,818)"/>
-      </g>
-    </g>
-  </g>
+// ===== 等距正交相机 =====
+const aspect = W/H;
+const viewSize = 500;
+const camera = new THREE.OrthographicCamera(
+  -viewSize*aspect, viewSize*aspect, viewSize, -viewSize, 0.1, 2000
+);
+// 等距角度
+camera.position.set(600, 600, 600);
+camera.lookAt(180, 80, 120);
 
-  <!-- ==================== 后墙 ==================== -->
-  <g id="walls">
-    <polygon points="110,820 110,380 450,180 450,620" fill="#F5F0E8" stroke="#E8E0D5" stroke-width="1"/>
-    <polygon points="450,620 450,180 790,380 790,820" fill="#F0EBE0" stroke="#E8E0D5" stroke-width="1"/>
-    <g stroke="#E8E0D5" stroke-width="0.5" opacity="0.35">
-      <line x1="110" y1="420" x2="450" y2="220"/><line x1="110" y1="460" x2="450" y2="260"/>
-      <line x1="110" y1="500" x2="450" y2="300"/><line x1="110" y1="540" x2="450" y2="340"/>
-      <line x1="110" y1="580" x2="450" y2="380"/><line x1="110" y1="620" x2="450" y2="420"/>
-      <line x1="110" y1="660" x2="450" y2="460"/><line x1="110" y1="700" x2="450" y2="500"/>
-      <line x1="110" y1="740" x2="450" y2="540"/><line x1="110" y1="780" x2="450" y2="580"/>
-      <line x1="190" y1="395" x2="190" y2="805"/><line x1="270" y1="345" x2="270" y2="770"/>
-      <line x1="350" y1="295" x2="350" y2="735"/><line x1="430" y1="245" x2="430" y2="700"/>
-    </g>
-    <g stroke="#E0D8D0" stroke-width="0.5" opacity="0.3">
-      <line x1="450" y1="220" x2="790" y2="420"/><line x1="450" y1="260" x2="790" y2="460"/>
-      <line x1="450" y1="300" x2="790" y2="500"/><line x1="450" y1="340" x2="790" y2="540"/>
-      <line x1="450" y1="380" x2="790" y2="580"/><line x1="450" y1="420" x2="790" y2="620"/>
-      <line x1="450" y1="460" x2="790" y2="660"/><line x1="450" y1="500" x2="790" y2="700"/>
-      <line x1="530" y1="245" x2="530" y2="700"/><line x1="610" y1="295" x2="610" y2="735"/>
-      <line x1="690" y1="345" x2="690" y2="770"/>
-    </g>
-  </g>
+const renderer = new THREE.WebGLRenderer({antialias:true, alpha:false});
+renderer.setSize(W, H);
+renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+renderer.shadowMap.enabled = true;
+renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+renderer.toneMapping = THREE.ACESFilmicToneMapping;
+renderer.toneMappingExposure = 1.1;
+document.body.appendChild(renderer.domElement);
 
-  <!-- ==================== 暖光 ==================== -->
-  <rect x="0" y="0" width="900" height="1200" fill="url(#warmGlow)" pointer-events="none"/>
+// ===== 材质 =====
+const mat = {
+  // 薄荷绿（冰箱、橱柜）
+  mintGreen: new THREE.MeshStandardMaterial({color:0xA8D8C8, roughness:0.85, metalness:0.02}),
+  mintGreenDark: new THREE.MeshStandardMaterial({color:0x90C8B5, roughness:0.85, metalness:0.02}),
+  mintGreenLight: new THREE.MeshStandardMaterial({color:0xB8E8D8, roughness:0.85, metalness:0.02}),
+  // 奶白色（台面、墙面）
+  cream: new THREE.MeshStandardMaterial({color:0xF5F0E8, roughness:0.8, metalness:0.01}),
+  creamDark: new THREE.MeshStandardMaterial({color:0xE8E0D8, roughness:0.8, metalness:0.01}),
+  // 深灰（烤箱、煎锅）
+  darkGray: new THREE.MeshStandardMaterial({color:0x606060, roughness:0.6, metalness:0.3}),
+  darkGray2: new THREE.MeshStandardMaterial({color:0x505050, roughness:0.6, metalness:0.3}),
+  // 金属
+  metal: new THREE.MeshStandardMaterial({color:0xB0B0B0, roughness:0.3, metalness:0.7}),
+  metalDark: new THREE.MeshStandardMaterial({color:0x808080, roughness:0.4, metalness:0.6}),
+  // 深棕木（桌子、椅子）
+  darkWood: new THREE.MeshStandardMaterial({color:0x6B4E3D, roughness:0.75, metalness:0.02}),
+  // 浅木色（椅子）
+  lightWood: new THREE.MeshStandardMaterial({color:0xC8A882, roughness:0.7, metalness:0.02}),
+  lightWoodDark: new THREE.MeshStandardMaterial({color:0xB89872, roughness:0.7, metalness:0.02}),
+  // 地板
+  floor: new THREE.MeshStandardMaterial({color:0xE8E0D8, roughness:0.9, metalness:0}),
+  // 瓷砖墙
+  wallL: new THREE.MeshStandardMaterial({color:0xF5F0E8, roughness:0.85, metalness:0}),
+  wallR: new THREE.MeshStandardMaterial({color:0xF0EBE0, roughness:0.85, metalness:0}),
+  // 底座
+  base: new THREE.MeshStandardMaterial({color:0x707070, roughness:0.9, metalness:0.1}),
+  baseDark: new THREE.MeshStandardMaterial({color:0x585858, roughness:0.9, metalness:0.1}),
+  // 窗帘橙色
+  orange: new THREE.MeshStandardMaterial({color:0xE8985A, roughness:0.8, metalness:0}),
+  // 蓝白毛巾
+  towel: new THREE.MeshStandardMaterial({color:0xB8D0E0, roughness:0.9, metalness:0}),
+  towelWhite: new THREE.MeshStandardMaterial({color:0xF0E8E0, roughness:0.9, metalness:0}),
+  // 陶制器具
+  pottery: new THREE.MeshStandardMaterial({color:0x8898A0, roughness:0.85, metalness:0.05}),
+  potteryBrown: new THREE.MeshStandardMaterial({color:0xA08870, roughness:0.85, metalness:0.05}),
+  // 面包
+  bread: new THREE.MeshStandardMaterial({color:0xE0B870, roughness:0.9, metalness:0}),
+  breadDark: new THREE.MeshStandardMaterial({color:0xD4A860, roughness:0.9, metalness:0}),
+  // 白瓷
+  whitePorcelain: new THREE.MeshStandardMaterial({color:0xF0F0F0, roughness:0.5, metalness:0.1}),
+  // 绿植
+  leaf: new THREE.MeshStandardMaterial({color:0x7A9E5A, roughness:0.8, metalness:0}),
+  leafDark: new THREE.MeshStandardMaterial({color:0x6B8E50, roughness:0.8, metalness:0}),
+  // 藤编
+  rattan: new THREE.MeshStandardMaterial({color:0xC8A870, roughness:0.85, metalness:0}),
+  rattanLight: new THREE.MeshStandardMaterial({color:0xD8B880, roughness:0.85, metalness:0}),
+  // 花盆
+  pot: new THREE.MeshStandardMaterial({color:0xF0E0D0, roughness:0.85, metalness:0}),
+  potRim: new THREE.MeshStandardMaterial({color:0xC89070, roughness:0.85, metalness:0}),
+  // 鸡蛋
+  egg: new THREE.MeshStandardMaterial({color:0xF5F0E0, roughness:0.7, metalness:0.02}),
+  // 土豆
+  potato: new THREE.MeshStandardMaterial({color:0xC8A860, roughness:0.9, metalness:0}),
+  // 咖啡
+  coffee: new THREE.MeshStandardMaterial({color:0x6B4E3D, roughness:0.4, metalness:0.1}),
+  // 窗玻璃
+  glass: new THREE.MeshStandardMaterial({color:0xE8F0F8, roughness:0.1, metalness:0.05, transparent:true, opacity:0.7}),
+  // 窗框
+  windowFrame: new THREE.MeshStandardMaterial({color:0xD0D8E0, roughness:0.7, metalness:0.1}),
+  // 咖啡机
+  coffeeMachine: new THREE.MeshStandardMaterial({color:0x404040, roughness:0.5, metalness:0.4}),
+};
 
-  <!-- ================================================================ -->
-  <!-- ==================== 冰箱（左侧）==================== -->
-  <!-- ================================================================ -->
-  <g id="fridge" filter="url(#shadowH)">
-    <polygon points="140,780 140,520 260,460 260,720" fill="#A8D8C8" stroke="#90C0B0" stroke-width="1.5"/>
-    <polygon points="260,720 260,460 310,435 310,695" fill="#90C8B5" stroke="#80B8A5" stroke-width="1"/>
-    <polygon points="140,520 260,460 310,435 190,495" fill="#B8E8D8" stroke="#A0D8C5" stroke-width="1"/>
-    <!-- 门分割线 -->
-    <line x1="150" y1="650" x2="255" y2="595" stroke="#88B8A8" stroke-width="1.5"/>
-    <!-- 把手 -->
-    <line x1="238" y1="565" x2="238" y2="600" stroke="#707070" stroke-width="3" stroke-linecap="round"/>
-    <line x1="238" y1="665" x2="238" y2="690" stroke="#707070" stroke-width="3" stroke-linecap="round"/>
-    <!-- 高光 -->
-    <polygon points="155,540 175,530 175,640 155,650" fill="#B8E0D0" opacity="0.25"/>
-    <!-- 顶部杯碟 -->
-    <ellipse cx="185" cy="490" rx="14" ry="8" fill="#8898A0" stroke="#708088" stroke-width="1"/>
-    <ellipse cx="185" cy="486" rx="10" ry="5" fill="#98A8B0"/>
-    <ellipse cx="220" cy="476" rx="12" ry="7" fill="#A08870" stroke="#887060" stroke-width="1"/>
-    <ellipse cx="220" cy="472" rx="9" ry="4.5" fill="#B09880"/>
-    <ellipse cx="250" cy="462" rx="10" ry="6" fill="#8898A0" stroke="#708088" stroke-width="1"/>
-    <!-- 侧面毛巾 -->
-    <rect x="265" y="520" width="25" height="45" rx="2" fill="#B8D0E0" stroke="#90B0C8" stroke-width="0.8" transform="skewY(-15) translate(0,280)"/>
-    <rect x="272" y="575" width="18" height="32" rx="2" fill="#F0E8E0" stroke="#D8D0C8" stroke-width="0.8" transform="skewY(-15) translate(0,260)"/>
-  </g>
+// ===== 工具函数 =====
+function box(w,h,d,material,x,y,z){
+  const geo=new THREE.BoxGeometry(w,h,d);
+  const mesh=new THREE.Mesh(geo,material);
+  mesh.position.set(x+w/2, y+h/2, z+d/2);
+  mesh.castShadow=true;mesh.receiveShadow=true;
+  scene.add(mesh);
+  return mesh;
+}
+function cyl(rTop,rBot,h,seg,material,x,y,z){
+  const geo=new THREE.CylinderGeometry(rTop,rBot,h,seg);
+  const mesh=new THREE.Mesh(geo,material);
+  mesh.position.set(x, y+h/2, z);
+  mesh.castShadow=true;mesh.receiveShadow=true;
+  scene.add(mesh);
+  return mesh;
+}
+function sphere(r,material,x,y,z){
+  const geo=new THREE.SphereGeometry(r,16,12);
+  const mesh=new THREE.Mesh(geo,material);
+  mesh.position.set(x,y,z);
+  mesh.castShadow=true;mesh.receiveShadow=true;
+  scene.add(mesh);
+  return mesh;
+}
 
-  <!-- ================================================================ -->
-  <!-- ==================== 灶台+烤箱（冰箱右侧）==================== -->
-  <!-- ================================================================ -->
-  <g id="stove" filter="url(#shadowH)">
-    <!-- 台面（奶白色） -->
-    <polygon points="260,720 260,460 420,380 420,640" fill="#F5F0E8" stroke="#E0D8D0" stroke-width="1"/>
-    <polygon points="420,640 420,380 470,355 470,615" fill="#E8E0D8" stroke="#D8D0C8" stroke-width="1"/>
-    <polygon points="260,460 420,380 470,355 310,435" fill="#FAF5F0" stroke="#E8E0D5" stroke-width="1"/>
+// ========================================================
+// ==================== 场景构建 ====================
+// ========================================================
 
-    <!-- 烤箱门（深灰色） -->
-    <rect x="280" y="560" width="110" height="80" rx="3" fill="#606060" stroke="#505050" stroke-width="1" transform="skewY(-15) translate(0,250)"/>
-    <!-- 烤箱玻璃窗 -->
-    <rect x="290" y="570" width="90" height="55" rx="2" fill="#404040" stroke="#505050" stroke-width="0.5" transform="skewY(-15) translate(0,250)"/>
-    <!-- 烤箱内微光 -->
-    <rect x="295" y="575" width="80" height="45" rx="1" fill="#504840" opacity="0.6" transform="skewY(-15) translate(0,250)"/>
-    <!-- 4个旋钮 -->
-    <circle cx="300" cy="660" r="6" fill="#808080" stroke="#686868" stroke-width="1"/>
-    <circle cx="300" cy="660" r="2" fill="#909090"/>
-    <circle cx="325" cy="650" r="6" fill="#808080" stroke="#686868" stroke-width="1"/>
-    <circle cx="325" cy="650" r="2" fill="#909090"/>
-    <circle cx="350" cy="640" r="6" fill="#808080" stroke="#686868" stroke-width="1"/>
-    <circle cx="350" cy="640" r="2" fill="#909090"/>
-    <circle cx="375" cy="630" r="6" fill="#808080" stroke="#686868" stroke-width="1"/>
-    <circle cx="375" cy="630" r="2" fill="#909090"/>
-    <!-- 烤箱布巾 -->
-    <rect x="310" y="685" width="40" height="20" rx="2" fill="#F0E8E0" stroke="#D8D0C8" stroke-width="0.5" transform="skewY(-15) translate(0,200)"/>
+// ----- 底座 -----
+box(500,30,400, mat.base, 0,-30,0);
+box(500,5,400, mat.baseDark, 0,0,0);
 
-    <!-- 抽油烟机（白色） -->
-    <polygon points="270,460 270,380 430,300 430,380" fill="#F0ECE5" stroke="#E0D8D0" stroke-width="1"/>
-    <polygon points="430,380 430,300 480,275 480,355" fill="#E5E0D8" stroke="#D8D0C8" stroke-width="1"/>
-    <polygon points="270,380 430,300 480,275 320,355" fill="#F5F2ED" stroke="#E8E0D8" stroke-width="1"/>
-    <!-- 油烟机出风口 -->
-    <line x1="290" y1="375" x2="435" y2="305" stroke="#D0C8C0" stroke-width="1"/>
-    <line x1="290" y1="370" x2="435" y2="300" stroke="#D0C8C0" stroke-width="1"/>
+// ----- 地板 -----
+box(480,2,380, mat.floor, 10,2,10);
 
-    <!-- 灶台上厨具 -->
-    <!-- 小银质奶锅 -->
-    <ellipse cx="340" cy="420" rx="20" ry="10" fill="#B0B0B0" stroke="#909090" stroke-width="1"/>
-    <ellipse cx="340" cy="415" rx="18" ry="8" fill="#C0C0C0"/>
-    <line x1="358" y1="418" x2="375" y2="410" stroke="#909090" stroke-width="2.5" stroke-linecap="round"/>
-    <!-- 不锈钢水壶 -->
-    <ellipse cx="395" cy="405" rx="14" ry="7" fill="#A8A8A8" stroke="#909090" stroke-width="1"/>
-    <rect x="385" y="388" width="20" height="17" rx="2" fill="#B8B8B8" stroke="#909090" stroke-width="0.8"/>
-    <line x1="405" y1="395" x2="415" y2="385" stroke="#909090" stroke-width="2" stroke-linecap="round"/>
-    <!-- 壶盖 -->
-    <ellipse cx="395" cy="387" rx="10" ry="5" fill="#C0C0C0"/>
-    <circle cx="395" cy="384" r="3" fill="#A0A0A0"/>
-  </g>
+// ----- 菱形格纹地板纹理（用平面叠加）-----
+const floorCanvas = document.createElement('canvas');
+floorCanvas.width=512;floorCanvas.height=512;
+const fctx=floorCanvas.getContext('2d');
+fctx.fillStyle='#E8E0D8';fctx.fillRect(0,0,512,512);
+fctx.strokeStyle='#C8B8A0';fctx.lineWidth=2;
+const step=50;
+for(let i=0;i<12;i++){
+  fctx.beginPath();fctx.moveTo(i*step,0);fctx.lineTo(i*step,512);fctx.stroke();
+  fctx.beginPath();fctx.moveTo(0,i*step);fctx.lineTo(512,i*step);fctx.stroke();
+}
+for(let i=0;i<11;i++){
+  for(let j=0;j<11;j++){
+    if((i+j)%3===0){
+      fctx.fillStyle='rgba(216,205,184,0.3)';
+      fctx.beginPath();fctx.arc(i*step+step/2,j*step+step/2,3,0,Math.PI*2);fctx.fill();
+    }
+  }
+}
+const floorTex=new THREE.CanvasTexture(floorCanvas);
+floorTex.wrapS=floorTex.wrapT=THREE.RepeatWrapping;
+floorTex.repeat.set(2,2);
+const floorPlane=new THREE.Mesh(
+  new THREE.PlaneGeometry(480,380),
+  new THREE.MeshStandardMaterial({map:floorTex,roughness:0.9})
+);
+floorPlane.rotation.x=-Math.PI/2;
+floorPlane.position.set(250,2.5,200);
+floorPlane.receiveShadow=true;
+scene.add(floorPlane);
 
-  <!-- ================================================================ -->
-  <!-- ==================== 水槽+橱柜+吊柜（灶台右侧）==================== -->
-  <!-- ================================================================ -->
-  <g id="sink" filter="url(#shadowH)">
-    <!-- 下柜（薄荷绿，同冰箱色） -->
-    <polygon points="420,640 420,380 560,310 560,570" fill="#A8D8C8" stroke="#90C0B0" stroke-width="1"/>
-    <polygon points="560,570 560,310 610,285 610,545" fill="#90C8B5" stroke="#80B8A5" stroke-width="1"/>
-    <polygon points="420,380 560,310 610,285 470,355" fill="#B8E8D8" stroke="#A0D8C5" stroke-width="1"/>
-    <!-- 做旧磨损质感 -->
-    <polygon points="440,400 440,550 480,530 480,380" fill="#A0D0C0" opacity="0.3"/>
+// ----- 左墙 -----
+const wallLGeo=new THREE.PlaneGeometry(500,380);
+const wallLMesh=new THREE.Mesh(wallLGeo, mat.wallL);
+wallLMesh.position.set(250,192,0);
+wallLMesh.receiveShadow=true;
+scene.add(wallLMesh);
 
-    <!-- 水槽（不锈钢凹陷） -->
-    <polygon points="445,395 445,440 520,400 520,355" fill="#909090" stroke="#787878" stroke-width="1"/>
-    <polygon points="520,355 520,400 555,382 555,337" fill="#888888" stroke="#707070" stroke-width="1"/>
-    <!-- 水槽内 -->
-    <polygon points="450,400 450,435 515,397 515,360" fill="#787878"/>
-    <!-- 水龙头 -->
-    <line x1="480" y1="360" x2="480" y2="320" stroke="#A0A0A0" stroke-width="3" stroke-linecap="round"/>
-    <path d="M480,320 Q500,310 510,325" fill="none" stroke="#A0A0A0" stroke-width="2.5" stroke-linecap="round"/>
-    <circle cx="480" cy="358" r="4" fill="#B0B0B0"/>
+// ----- 右墙 -----
+const wallRGeo=new THREE.PlaneGeometry(400,380);
+const wallRMesh=new THREE.Mesh(wallRGeo, mat.wallR);
+wallRMesh.position.set(500,192,200);
+wallRMesh.rotation.y=-Math.PI/2;
+wallRMesh.receiveShadow=true;
+scene.add(wallRMesh);
 
-    <!-- 吊柜 - 上层（带玻璃门薄荷绿） -->
-    <polygon points="430,300 430,190 560,125 560,235" fill="#A8D8C8" stroke="#90C0B0" stroke-width="1" opacity="0.9"/>
-    <polygon points="560,235 560,125 610,100 610,210" fill="#90C8B5" stroke="#80B8A5" stroke-width="1" opacity="0.9"/>
-    <polygon points="430,190 560,125 610,100 480,165" fill="#B8E8D8" stroke="#A0D8C5" stroke-width="1" opacity="0.9"/>
-    <!-- 玻璃门高光 -->
-    <polygon points="445,200 445,280 510,245 510,165" fill="#C8E8D8" opacity="0.2"/>
-    <!-- 内部碗碟 -->
-    <ellipse cx="470" cy="220" rx="12" ry="6" fill="#E0D8D0" stroke="#C8C0B8" stroke-width="0.5"/>
-    <ellipse cx="490" cy="210" rx="10" ry="5" fill="#D8D0C8" stroke="#C0B8B0" stroke-width="0.5"/>
-    <ellipse cx="475" cy="235" rx="8" ry="4" fill="#E8E0D8"/>
+// ----- 墙面瓷砖纹理 -----
+const tileCanvas=document.createElement('canvas');
+tileCanvas.width=256;tileCanvas.height=256;
+const tctx=tileCanvas.getContext('2d');
+tctx.fillStyle='#F5F0E8';tctx.fillRect(0,0,256,256);
+tctx.strokeStyle='rgba(200,192,180,0.3)';tctx.lineWidth=0.5;
+for(let i=0;i<8;i++){
+  tctx.beginPath();tctx.moveTo(i*32,0);tctx.lineTo(i*32,256);tctx.stroke();
+  tctx.beginPath();tctx.moveTo(0,i*32);tctx.lineTo(256,i*32);tctx.stroke();
+}
+const tileTex=new THREE.CanvasTexture(tileCanvas);
+tileTex.wrapS=tileTex.wrapT=THREE.RepeatWrapping;
+tileTex.repeat.set(4,3);
+wallLMesh.material=new THREE.MeshStandardMaterial({map:tileTex,roughness:0.85});
+wallRMesh.material=new THREE.MeshStandardMaterial({map:tileTex,roughness:0.85});
 
-    <!-- 吊柜 - 下层（开放式搁板） -->
-    <polygon points="430,300 430,250 560,185 560,235" fill="#F0EBE5" stroke="#E0D8D0" stroke-width="0.8"/>
-    <polygon points="560,235 560,185 610,160 610,210" fill="#E8E3DD" stroke="#D8D0C8" stroke-width="0.8"/>
-    <!-- 搁板上物品 -->
-    <!-- 白色水壶 -->
-    <ellipse cx="460" cy="230" rx="8" ry="4" fill="#F0F0F0"/>
-    <rect x="455" y="218" width="10" height="12" rx="2" fill="#E8E8E8" stroke="#D0D0D0" stroke-width="0.5"/>
-    <!-- 碗盘 -->
-    <ellipse cx="490" cy="222" rx="10" ry="5" fill="#E8E0D8" stroke="#D0C8C0" stroke-width="0.5"/>
-    <ellipse cx="510" cy="215" rx="8" ry="4" fill="#F0E8E0"/>
-    <!-- 咖啡机（黑色带金属细节） -->
-    <rect x="530" y="195" width="22" height="25" rx="3" fill="#404040" stroke="#303030" stroke-width="0.8"/>
-    <rect x="533" y="200" width="16" height="10" rx="1" fill="#555"/>
-    <circle cx="541" cy="213" r="3" fill="#888"/>
-    <!-- 餐具 -->
-    <line x1="495" y1="218" x2="495" y2="235" stroke="#C0C0C0" stroke-width="1.5" stroke-linecap="round"/>
-    <line x1="500" y1="216" x2="500" y2="233" stroke="#C0C0C0" stroke-width="1.5" stroke-linecap="round"/>
-  </g>
+// ========================================================
+// ==================== 冰箱（左侧）==================== ========================================================
+// 主体
+box(90,280,70, mat.mintGreen, 30,4,20);
+// 侧面
+box(10,280,70, mat.mintGreenDark, 120,4,20);
+// 顶面
+box(100,8,78, mat.mintGreenLight, 30,284,16);
+// 门分割线
+box(90,2,2, mat.mintGreenDark, 30,160,90);
+// 上门把手
+box(4,30,4, mat.metalDark, 105,200,90);
+// 下门把手
+box(4,25,4, mat.metalDark, 105,90,90);
+// 高光条
+box(8,200,1, new THREE.MeshStandardMaterial({color:0xC0F0E0,roughness:0.8,transparent:true,opacity:0.2}), 35,50,91);
 
-  <!-- ================================================================ -->
-  <!-- ==================== 墙面挂件 ==================== -->
-  <!-- ================================================================ -->
+// 顶部杯碟
+cyl(10,10,4,16,mat.pottery, 55,292,40);
+cyl(8,8,3,16,mat.potteryBrown, 78,292,35);
+cyl(7,7,3,16,mat.pottery, 98,292,30);
 
-  <!-- 左上角深木色置物架 -->
-  <g id="shelf" filter="url(#shadow)">
-    <polygon points="130,470 130,420 240,365 240,415" fill="#6B4E3D" stroke="#5A3E30" stroke-width="1"/>
-    <polygon points="240,415 240,365 280,345 280,395" fill="#5A4535" stroke="#4A3525" stroke-width="1"/>
-    <!-- 陶制锅具 -->
-    <ellipse cx="165" cy="410" rx="15" ry="8" fill="#8898A0" stroke="#708088" stroke-width="1"/>
-    <ellipse cx="165" cy="405" rx="12" ry="6" fill="#98A8B0"/>
-    <!-- 棕褐色杯碟 -->
-    <ellipse cx="200" cy="398" rx="10" ry="6" fill="#A08870" stroke="#887060" stroke-width="1"/>
-    <ellipse cx="225" cy="390" rx="8" ry="5" fill="#8898A0"/>
-    <!-- 小罐 -->
-    <rect x="245" y="375" width="12" height="15" rx="3" fill="#A08870" stroke="#887060" stroke-width="0.8"/>
-    <ellipse cx="251" cy="374" rx="7" ry="4" fill="#B09880"/>
-  </g>
+// 侧面毛巾
+box(20,40,2, mat.towel, 122,150,35);
+box(15,30,2, mat.towelWhite, 124,100,38);
 
-  <!-- 灶台上方墙面挂件 -->
-  <g id="wall-items">
-    <!-- 金属汤勺 -->
-    <line x1="340" y1="280" x2="340" y2="340" stroke="#B0B0B0" stroke-width="2" stroke-linecap="round"/>
-    <ellipse cx="340" cy="345" rx="6" ry="10" fill="#B8B8B8" stroke="#A0A0A0" stroke-width="0.8"/>
-    <!-- 锅铲 -->
-    <line x1="365" y1="270" x2="365" y2="330" stroke="#A0A0A0" stroke-width="2" stroke-linecap="round"/>
-    <rect x="360" y="332" width="10" height="15" rx="2" fill="#B0B0B0" stroke="#909090" stroke-width="0.8"/>
-    <!-- 小型深色煎锅 -->
-    <ellipse cx="400" cy="320" rx="18" ry="9" fill="#505050" stroke="#404040" stroke-width="1"/>
-    <line x1="416" y1="318" x2="440" y2="308" stroke="#606060" stroke-width="2.5" stroke-linecap="round"/>
-    <!-- 藤蔓绿植 -->
-    <g transform="translate(355,260)">
-      <path d="M0,0 Q-15,20 -8,40" fill="none" stroke="#6B8E50" stroke-width="2"/>
-      <path d="M0,0 Q10,25 5,45" fill="none" stroke="#7A9E5A" stroke-width="1.8"/>
-      <path d="M0,0 Q-5,15 -12,30" fill="none" stroke="#5A7E40" stroke-width="1.5"/>
-      <!-- 叶子 -->
-      <ellipse cx="-10" cy="15" rx="6" ry="3" fill="#7A9E5A" transform="rotate(-30,-10,15)"/>
-      <ellipse cx="-5" cy="30" rx="7" ry="3" fill="#6B8E50" transform="rotate(20,-5,30)"/>
-      <ellipse cx="8" cy="20" rx="5" ry="2.5" fill="#8AAE60" transform="rotate(-15,8,20)"/>
-      <ellipse cx="3" cy="38" rx="6" ry="3" fill="#7A9E5A" transform="rotate(10,3,38)"/>
-      <ellipse cx="-12" cy="42" rx="5" ry="2.5" fill="#6B8E50" transform="rotate(-25,-12,42)"/>
-    </g>
-  </g>
+// ========================================================
+// ==================== 灶台+烤箱 ====================
+// ========================================================
+// 台面
+box(130,180,90, mat.cream, 140,4,10);
+// 侧面
+box(10,180,90, mat.creamDark, 270,4,10);
+// 台面顶
+box(140,6,96, mat.cream, 140,184,7);
 
-  <!-- ================================================================ -->
-  <!-- ==================== 窗户+窗帘+藤编灯（右侧墙面）==================== -->
-  <!-- ================================================================ -->
-  <g id="window-area">
-    <!-- 窗户白色窗框 -->
-    <polygon points="570,320 570,180 730,260 730,400" fill="#E8F0F8" stroke="#D0D8E0" stroke-width="1.5"/>
-    <polygon points="730,400 730,260 770,240 770,380" fill="#D8E0E8" stroke="#C8D0D8" stroke-width="1"/>
-    <!-- 窗框十字 -->
-    <line x1="650" y1="220" x2="650" y2="380" stroke="#D0D8E0" stroke-width="1.5"/>
-    <line x1="570" y1="300" x2="730" y2="380" stroke="#D0D8E0" stroke-width="1.5"/>
-    <!-- 窗外绿植模糊 -->
-    <ellipse cx="660" cy="270" rx="30" ry="15" fill="#8AAE60" opacity="0.2"/>
-    <ellipse cx="640" cy="310" rx="20" ry="10" fill="#7A9E5A" opacity="0.15"/>
+// 烤箱门
+box(110,80,4, mat.darkGray, 150,50,100);
+// 烤箱玻璃窗
+box(90,55,2, new THREE.MeshStandardMaterial({color:0x404040,roughness:0.3,metalness:0.2}), 160,60,103);
+// 烤箱内部微光
+box(85,48,1, new THREE.MeshStandardMaterial({color:0x504840,roughness:0.9,emissive:0x201008,emissiveIntensity:0.3}), 162,63,105);
 
-    <!-- 橙白条纹短窗帘（左侧） -->
-    <g transform="translate(545,170)">
-      <rect x="0" y="0" width="30" height="80" rx="2" fill="#E8985A" opacity="0.85" transform="skewY(-15)"/>
-      <rect x="0" y="0" width="30" height="80" rx="2" fill="url(#curtainStripe)" transform="skewY(-15)"/>
-      <!-- 条纹 -->
-      <rect x="0" y="8" width="30" height="12" fill="#F5F0E8" opacity="0.4" transform="skewY(-15)"/>
-      <rect x="0" y="32" width="30" height="12" fill="#F5F0E8" opacity="0.4" transform="skewY(-15)"/>
-      <rect x="0" y="56" width="30" height="12" fill="#F5F0E8" opacity="0.4" transform="skewY(-15)"/>
-    </g>
-    <!-- 右侧窗帘 -->
-    <g transform="translate(710,250)">
-      <rect x="0" y="0" width="28" height="70" rx="2" fill="#E8985A" opacity="0.8" transform="skewY(-15)"/>
-      <rect x="0" y="6" width="28" height="10" fill="#F5F0E8" opacity="0.4" transform="skewY(-15)"/>
-      <rect x="0" y="26" width="28" height="10" fill="#F5F0E8" opacity="0.4" transform="skewY(-15)"/>
-      <rect x="0" y="46" width="28" height="10" fill="#F5F0E8" opacity="0.4" transform="skewY(-15)"/>
-    </g>
+// 4个旋钮
+for(let i=0;i<4;i++){
+  cyl(5,5,4,12,mat.metalDark, 158+i*25,145,100);
+  cyl(2,2,1,12,mat.metal, 158+i*25,149,100);
+}
 
-    <!-- 藤编吊灯 -->
-    <g transform="translate(650,140)">
-      <!-- 吊线 -->
-      <line x1="0" y1="0" x2="0" y2="30" stroke="#A09080" stroke-width="1.5"/>
-      <!-- 灯罩（藤编镂空） -->
-      <ellipse cx="0" cy="45" rx="22" ry="12" fill="#C8A870" stroke="#B09060" stroke-width="1"/>
-      <ellipse cx="0" cy="35" rx="18" ry="8" fill="#D8B880" stroke="#C0A068" stroke-width="0.8"/>
-      <!-- 镂空纹理 -->
-      <line x1="-12" y1="35" x2="-15" y2="48" stroke="#B09060" stroke-width="0.5" opacity="0.6"/>
-      <line x1="-4" y1="32" x2="-5" y2="50" stroke="#B09060" stroke-width="0.5" opacity="0.6"/>
-      <line x1="4" y1="32" x2="5" y2="50" stroke="#B09060" stroke-width="0.5" opacity="0.6"/>
-      <line x1="12" y1="35" x2="15" y2="48" stroke="#B09060" stroke-width="0.5" opacity="0.6"/>
-      <!-- 灯光 -->
-      <circle cx="0" cy="42" r="15" fill="url(#lampGlow)" opacity="0.5"/>
-    </g>
+// 烤箱布巾
+box(35,15,2, mat.towelWhite, 165,10,100);
 
-    <!-- 窗台小物件 -->
-    <rect x="580" y="380" width="15" height="10" rx="2" fill="#D0C8C0" transform="skewY(-15)"/>
-    <rect x="620" y="390" width="12" height="8" rx="2" fill="#C8B8A0" transform="skewY(-15)"/>
-  </g>
+// 抽油烟机
+box(120,70,85, mat.cream, 145,190,10);
+box(10,70,85, mat.creamDark, 265,190,10);
+box(125,5,90, new THREE.MeshStandardMaterial({color:0xE8E0D5,roughness:0.8}), 143,260,8);
 
-  <!-- ================================================================ -->
-  <!-- ==================== 餐桌椅（右下角）==================== -->
-  <!-- ================================================================ -->
-  <g id="table-area" filter="url(#shadowH)">
-    <!-- 餐桌（深棕色木质） -->
-    <!-- 桌面（浅灰色哑光） -->
-    <polygon points="550,780 550,720 700,645 700,705" fill="#D8D0C8" stroke="#C0B8B0" stroke-width="1"/>
-    <polygon points="700,705 700,645 740,625 740,685" fill="#C8C0B8" stroke="#B8B0A8" stroke-width="1"/>
-    <polygon points="550,720 700,645 740,625 590,700" fill="#E0D8D0" stroke="#D0C8C0" stroke-width="1"/>
-    <!-- 桌腿 -->
-    <line x1="565" y1="785" x2="565" y2="820" stroke="#6B4E3D" stroke-width="4"/>
-    <line x1="690" y1="715" x2="690" y2="750" stroke="#6B4E3D" stroke-width="4"/>
-    <line x1="725" y1="698" x2="725" y2="730" stroke="#5A4535" stroke-width="3.5"/>
+// 小奶锅
+cyl(14,14,18,16,mat.metal, 180,192,45);
+cyl(15,15,2,16,mat.metal, 179,210,44);
+box(3,3,18,mat.metalDark, 194,200,50);
 
-    <!-- 面包餐盘 -->
-    <ellipse cx="620" cy="680" rx="22" ry="12" fill="#F0F0F0" stroke="#E0E0E0" stroke-width="0.8"/>
-    <!-- 面包片 -->
-    <ellipse cx="618" cy="676" rx="14" ry="7" fill="#D4A860" stroke="#C09040" stroke-width="0.5"/>
-    <ellipse cx="622" cy="674" rx="12" ry="5" fill="#E0B870"/>
-    <!-- 面包焦色边缘 -->
-    <path d="M608,674 Q612,668 618,670 Q624,668 628,674" fill="none" stroke="#B08030" stroke-width="0.8" opacity="0.5"/>
+// 不锈钢水壶
+cyl(10,10,20,16,mat.metal, 225,192,35);
+cyl(12,12,2,16,mat.metal, 224,212,34);
+sphere(3,mat.metal, 225,215,35);
+// 壶嘴
+box(10,3,3,mat.metal, 235,205,32);
 
-    <!-- 咖啡杯 -->
-    <ellipse cx="660" cy="668" rx="10" ry="6" fill="#F0F0F0" stroke="#E0E0E0" stroke-width="0.8"/>
-    <ellipse cx="660" cy="665" rx="8" ry="4" fill="#E8E0D8"/>
-    <path d="M670,666 Q678,662 676,670" fill="none" stroke="#E0E0E0" stroke-width="1.5"/>
-    <!-- 咖啡液面 -->
-    <ellipse cx="660" cy="666" rx="6" ry="3" fill="#6B4E3D" opacity="0.6"/>
+// ========================================================
+// ==================== 水槽+橱柜 ====================
+// ========================================================
+// 下柜（薄荷绿）
+box(110,180,90, mat.mintGreen, 280,4,10);
+box(10,180,90, mat.mintGreenDark, 390,4,10);
+box(115,6,96, mat.mintGreenLight, 278,184,7);
 
-    <!-- 深色小调料罐 -->
-    <rect x="690" y="655" width="10" height="12" rx="2" fill="#505050" stroke="#404040" stroke-width="0.5"/>
-    <ellipse cx="695" cy="654" rx="6" ry="3.5" fill="#606060"/>
-    <circle cx="695" cy="653" r="1.5" fill="#808080"/>
-  </g>
+// 水槽凹陷
+box(70,3,40, mat.metalDark, 295,182,20);
+box(65,8,35, new THREE.MeshStandardMaterial({color:0x787878,roughness:0.4,metalness:0.5}), 298,175,22);
 
-  <!-- ================================================================ -->
-  <!-- ==================== 椅子 ==================== -->
-  <!-- ================================================================ -->
-  <g id="chairs" filter="url(#shadow)">
-    <!-- 椅子1 - 浅木色靠背椅（桌子左侧） -->
-    <g transform="translate(520,770)">
-      <!-- 座面 -->
-      <polygon points="0,0 40,-20 60,-10 20,10" fill="#C8A882" stroke="#B09070" stroke-width="1"/>
-      <!-- 靠背 -->
-      <polygon points="0,0 0,-50 10,-55 10,-5" fill="#C8A882" stroke="#B09070" stroke-width="1"/>
-      <polygon points="10,-55 10,-5 18,-10 18,-60" fill="#B89872" stroke="#A08060" stroke-width="0.8"/>
-      <!-- 靠背横条 -->
-      <line x1="2" y1="-30" x2="16" y2="-36" stroke="#B09070" stroke-width="1.5"/>
-      <line x1="2" y1="-18" x2="16" y2="-24" stroke="#B09070" stroke-width="1.5"/>
-      <!-- 编织坐垫 -->
-      <polygon points="5,-3 38,-21 55,-12 17,7" fill="#E8D8C0" stroke="#D0C0A8" stroke-width="0.5"/>
-      <!-- 腿 -->
-      <line x1="5" y1="5" x2="5" y2="35" stroke="#B09070" stroke-width="2.5"/>
-      <line x1="55" y1="-8" x2="55" y2="22" stroke="#B09070" stroke-width="2.5"/>
-    </g>
+// 水龙头
+cyl(3,3,40,8,mat.metal, 330,185,35);
+box(15,3,3,mat.metal, 328,225,33);
+cyl(2,2,3,8,mat.metal, 340,222,33);
 
-    <!-- 椅子2 - 浅木色靠背椅（桌子右侧） -->
-    <g transform="translate(700,700)">
-      <polygon points="0,0 35,-18 55,-8 20,10" fill="#C8A882" stroke="#B09070" stroke-width="1"/>
-      <polygon points="55,-8 55,-55 62,-58 62,-12" fill="#C8A882" stroke="#B09070" stroke-width="1"/>
-      <polygon points="62,-58 62,-12 68,-15 68,-62" fill="#B89872" stroke="#A08060" stroke-width="0.8"/>
-      <line x1="56" y1="-35" x2="67" y2="-40" stroke="#B09070" stroke-width="1.5"/>
-      <line x1="56" y1="-22" x2="67" y2="-27" stroke="#B09070" stroke-width="1.5"/>
-      <polygon points="5,-3 33,-19 50,-10 17,7" fill="#E8D8C0" stroke="#D0C0A8" stroke-width="0.5"/>
-      <line x1="8" y1="8" x2="8" y2="35" stroke="#B09070" stroke-width="2.5"/>
-      <line x1="52" y1="-5" x2="52" y2="22" stroke="#B09070" stroke-width="2.5"/>
-    </g>
+// 吊柜
+box(105,110,80, mat.mintGreen, 285,270,10);
+box(10,110,80, mat.mintGreenDark, 390,270,10);
+box(110,5,85, mat.mintGreenLight, 283,380,8);
+// 玻璃门高光
+box(40,60,1, new THREE.MeshStandardMaterial({color:0xC8F0E0,roughness:0.3,transparent:true,opacity:0.2}), 295,290,91);
 
-    <!-- 椅子3 - 深木色小餐椅（桌子前面，带藤编坐篮） -->
-    <g transform="translate(610,810)">
-      <polygon points="0,0 30,-15 48,-7 18,8" fill="#6B4E3D" stroke="#5A3E30" stroke-width="1"/>
-      <polygon points="0,0 0,-35 6,-38 6,-3" fill="#6B4E3D" stroke="#5A3E30" stroke-width="1"/>
-      <line x1="2" y1="-20" x2="5" y2="-22" stroke="#5A3E30" stroke-width="1.5"/>
-      <!-- 藤编坐篮 -->
-      <ellipse cx="20" cy="-5" rx="15" ry="8" fill="#C8A870" stroke="#B09060" stroke-width="1"/>
-      <ellipse cx="20" cy="-8" rx="12" ry="6" fill="#D8B880"/>
-      <!-- 鸡蛋 -->
-      <ellipse cx="16" cy="-10" rx="4" ry="5" fill="#F5F0E0" stroke="#E8E0D0" stroke-width="0.5"/>
-      <ellipse cx="23" cy="-9" rx="3.5" ry="4.5" fill="#F0EBE0" stroke="#E0D8D0" stroke-width="0.5"/>
-      <ellipse cx="19" cy="-6" rx="3" ry="4" fill="#F5F0E5"/>
-    </g>
-  </g>
+// 内部碗碟
+cyl(8,8,3,12,mat.whitePorcelain, 310,290,40);
+cyl(7,7,3,12,mat.creamDark, 330,290,35);
 
-  <!-- ================================================================ -->
-  <!-- ==================== 绿植细节 ==================== -->
-  <!-- ================================================================ -->
-  <g id="plants">
-    <!-- 窗台盆栽 -->
-    <g transform="translate(740,370)">
-      <!-- 花盆 -->
-      <polygon points="0,0 20,-10 30,-5 10,5" fill="#E8D0C0" stroke="#D0B8A0" stroke-width="1"/>
-      <polygon points="0,0 0,-20 20,-30 20,-10" fill="#F0E0D0" stroke="#E0D0C0" stroke-width="0.8"/>
-      <polygon points="20,-10 20,-30 30,-25 30,-5" fill="#E8D8C8" stroke="#D8C8B8" stroke-width="0.8"/>
-      <polygon points="0,-20 20,-30 30,-25 10,-15" fill="#F5E8D8" stroke="#E8D8C8" stroke-width="0.8"/>
-      <!-- 红棕色盆边 -->
-      <polygon points="0,-20 20,-30 30,-25 10,-15" fill="#C89070" opacity="0.4"/>
-      <!-- 细叶 -->
-      <line x1="10" y1="-25" x2="5" y2="-50" stroke="#6B8E50" stroke-width="1.5"/>
-      <line x1="15" y1="-28" x2="18" y2="-52" stroke="#7A9E5A" stroke-width="1.2"/>
-      <line x1="20" y1="-25" x2="28" y2="-48" stroke="#5A7E40" stroke-width="1.3"/>
-      <line x1="12" y1="-27" x2="2" y2="-45" stroke="#8AAE60" stroke-width="1"/>
-      <line x1="18" y1="-26" x2="22" y2="-45" stroke="#6B8E50" stroke-width="1.1"/>
-      <!-- 叶尖 -->
-      <ellipse cx="5" cy="-50" rx="2" ry="5" fill="#7A9E5A" transform="rotate(-15,5,-50)"/>
-      <ellipse cx="18" cy="-52" rx="2" ry="5" fill="#8AAE60" transform="rotate(5,18,-52)"/>
-      <ellipse cx="28" cy="-48" rx="2" ry="4" fill="#6B8E50" transform="rotate(15,28,-48)"/>
-    </g>
-  </g>
+// 搁板上物品
+// 白色水壶
+cyl(6,6,12,12,mat.whitePorcelain, 300,275,30);
+// 咖啡机
+box(18,20,15, mat.coffeeMachine, 340,275,25);
+cyl(2,2,2,8,mat.metal, 349,295,32);
 
-  <!-- ================================================================ -->
-  <!-- ==================== 左下角藤编容器+土豆 ==================== -->
-  <!-- ================================================================ -->
-  <g id="basket" filter="url(#shadow)">
-    <ellipse cx="170" cy="800" rx="30" ry="15" fill="#C8A870" stroke="#B09060" stroke-width="1"/>
-    <ellipse cx="170" cy="790" rx="28" ry="12" fill="#D8B880" stroke="#C0A068" stroke-width="0.8"/>
-    <!-- 编织纹理 -->
-    <line x1="150" y1="795" x2="155" y2="805" stroke="#B09060" stroke-width="0.5" opacity="0.5"/>
-    <line x1="165" y1="792" x2="168" y2="803" stroke="#B09060" stroke-width="0.5" opacity="0.5"/>
-    <line x1="180" y1="792" x2="183" y2="803" stroke="#B09060" stroke-width="0.5" opacity="0.5"/>
-    <!-- 土豆 -->
-    <ellipse cx="160" cy="785" rx="8" ry="6" fill="#C8A860" stroke="#B09050" stroke-width="0.5"/>
-    <ellipse cx="175" cy="783" rx="7" ry="5.5" fill="#D0B068" stroke="#B89850" stroke-width="0.5"/>
-    <ellipse cx="168" cy="778" rx="6" ry="5" fill="#C0A058"/>
-    <!-- 土豆表面纹理 -->
-    <circle cx="158" cy="783" r="1" fill="#B89840" opacity="0.4"/>
-    <circle cx="173" cy="781" r="0.8" fill="#B89840" opacity="0.4"/>
-  </g>
+// ========================================================
+// ==================== 窗户 ====================
+// ========================================================
+// 窗户玻璃
+box(140,150,2, mat.glass, 500,160,150);
+// 窗框
+box(140,3,2, mat.windowFrame, 500,160,150);
+box(140,3,2, mat.windowFrame, 500,307,150);
+box(3,150,2, mat.windowFrame, 500,160,150);
+box(3,150,2, mat.windowFrame, 637,160,150);
+// 十字窗框
+box(70,3,2, mat.windowFrame, 500,232,151);
+box(3,75,2, mat.windowFrame, 568,160,151);
 
-  <!-- ================================================================ -->
-  <!-- ==================== 地面散落面包台 ==================== -->
-  <!-- ================================================================ -->
-  <!-- 小台面/边桌（桌子旁边） -->
-  <g id="side-table" filter="url(#shadow)">
-    <polygon points="490,810 490,780 540,755 540,785" fill="#D8D0C8" stroke="#C8C0B8" stroke-width="0.8"/>
-    <polygon points="540,785 540,755 560,745 560,775" fill="#C8C0B8" stroke="#B8B0A8" stroke-width="0.8"/>
-    <!-- 面包 -->
-    <ellipse cx="515" cy="772" rx="12" ry="6" fill="#D4A860" stroke="#C09040" stroke-width="0.5"/>
-    <ellipse cx="515" cy="770" rx="10" ry="4.5" fill="#E0B870"/>
-  </g>
+// 窗外绿植模糊
+sphere(20, new THREE.MeshStandardMaterial({color:0x8AAE60,roughness:0.9,transparent:true,opacity:0.3}), 570,260,148);
 
-  <!-- 全局暖光叠加 -->
-  <rect x="0" y="0" width="900" height="1200" fill="url(#warmGlow)" pointer-events="none" opacity="0.3"/>
+// 橙白条纹窗帘（左侧）
+box(25,90,3, mat.orange, 500,230,153);
+// 条纹（白色叠加）
+for(let z=235;z<315;z+=25){
+  box(25,10,1, new THREE.MeshStandardMaterial({color:0xF5F0E8,roughness:0.8,transparent:true,opacity:0.4}), 500,z,155);
+}
 
-</svg>
-</div>
+// 右侧窗帘
+box(22,80,3, mat.orange, 638,240,153);
+for(let z=245;z<315;z+=22){
+  box(22,8,1, new THREE.MeshStandardMaterial({color:0xF5F0E8,roughness:0.8,transparent:true,opacity:0.4}), 638,z,155);
+}
+
+// 藤编吊灯
+cyl(1,1,35,8,mat.rattan, 570,320,160);
+cyl(16,12,15,12,mat.rattanLight, 562,340,155);
+cyl(18,14,3,12,mat.rattan, 561,355,154);
+// 灯光效果
+const lampLight=new THREE.PointLight(0xFFD080,0.5,100);
+lampLight.position.set(570,345,160);
+scene.add(lampLight);
+
+// 窗台小物件
+box(12,8,8, mat.creamDark, 520,155,152);
+box(10,6,6, mat.rattan, 560,155,152);
+
+// ========================================================
+// ==================== 餐桌椅 ====================
+// ========================================================
+// 餐桌桌面
+box(120,5,85, new THREE.MeshStandardMaterial({color:0xD8D0C8,roughness:0.7}), 340,100,230);
+// 桌腿
+box(4,95,4, mat.darkWood, 345,5,235);
+box(4,95,4, mat.darkWood, 452,5,235);
+box(4,95,4, mat.darkWood, 345,5,307);
+box(4,95,4, mat.darkWood, 452,5,307);
+
+// 面包餐盘
+cyl(16,16,3,16,mat.whitePorcelain, 385,105,260);
+// 面包片
+cyl(10,10,4,12,mat.bread, 383,108,258);
+cyl(8,8,2,12,mat.breadDark, 383,112,258);
+
+// 咖啡杯
+cyl(8,8,10,12,mat.whitePorcelain, 420,105,255);
+cyl(6,6,2,12,mat.creamDark, 420,115,255);
+// 咖啡液面
+cyl(5,5,1,12,mat.coffee, 420,116,255);
+// 杯把
+const cupHandle=new THREE.Mesh(
+  new THREE.TorusGeometry(4,1.2,8,12,Math.PI),
+  mat.whitePorcelain
+);
+cupHandle.position.set(428,110,255);
+cupHandle.rotation.z=Math.PI/2;
+cupHandle.rotation.y=Math.PI/2;
+scene.add(cupHandle);
+
+// 调料罐
+box(8,12,8, mat.darkGray, 445,105,275);
+cyl(5,5,2,12,mat.metalDark, 446,117,276);
+
+// 椅子1（浅木色）
+box(30,35,25, mat.lightWood, 310,5,240);
+box(5,55,25, mat.lightWoodDark, 310,40,240);
+// 编织坐垫
+box(28,3,23, new THREE.MeshStandardMaterial({color:0xE8D8C0,roughness:0.9}), 311,40,241);
+
+// 椅子2（浅木色）
+box(28,30,22, mat.lightWood, 465,5,240);
+box(5,50,22, mat.lightWoodDark, 490,35,240);
+
+// 椅子3（深木色+藤编坐篮+鸡蛋）
+box(25,25,20, mat.darkWood, 385,5,315);
+// 藤编坐篮
+cyl(12,10,8,12,mat.rattanLight, 397,30,325);
+// 鸡蛋
+sphere(4,mat.egg, 393,37,322);
+sphere(3.5,mat.egg, 400,37,328);
+sphere(3,mat.egg, 396,39,325);
+
+// ========================================================
+// ==================== 墙面挂件 ====================
+// ========================================================
+// 左上角深木色置物架
+box(85,6,18, mat.darkWood, 35,240,2);
+box(85,6,18, mat.darkWood, 35,270,2);
+
+// 陶制锅具
+cyl(12,12,8,12,mat.pottery, 55,248,8);
+cyl(10,10,6,12,mat.potteryBrown, 80,248,8);
+cyl(8,8,5,12,mat.pottery, 100,248,8);
+// 小罐
+box(10,12,10,mat.potteryBrown, 115,248,5);
+cyl(6,6,2,12,mat.pottery, 117,260,6);
+
+// 金属汤勺
+cyl(2,2,35,8,mat.metal, 195,175,3);
+sphere(5,mat.metal, 195,210,3);
+
+// 锅铲
+box(8,12,2,mat.metal, 215,195,3);
+cyl(2,2,25,8,mat.metalDark, 219,170,4);
+
+// 小煎锅
+cyl(14,14,5,16,mat.darkGray2, 248,180,3);
+box(18,3,3,mat.darkGray, 262,180,2);
+
+// 藤蔓绿植（从置物架垂下）
+function addVine(x,y,z){
+  const curve=new THREE.QuadraticBezierCurve3(
+    new THREE.Vector3(x,y,z),
+    new THREE.Vector3(x-10,y-15,z+5),
+    new THREE.Vector3(x-5,y-35,z+8)
+  );
+  const tubeGeo=new THREE.TubeGeometry(curve,12,1.5,6,false);
+  const vine=new THREE.Mesh(tubeGeo,mat.leafDark);
+  vine.castShadow=true;scene.add(vine);
+
+  // 叶子
+  for(let i=0;i<5;i++){
+    const t=i/5;
+    const pt=curve.getPoint(t);
+    const leafGeo=new THREE.SphereGeometry(4,8,6);
+    leafGeo.scale(1.5,0.5,1);
+    const leafMesh=new THREE.Mesh(leafGeo, i%2===0?mat.leaf:mat.leafDark);
+    leafMesh.position.copy(pt);
+    leafMesh.position.x+=Math.sin(i*1.5)*6;
+    leafMesh.position.z+=Math.cos(i*1.2)*4;
+    leafMesh.rotation.z=(Math.random()-0.5)*0.8;
+    leafMesh.castShadow=true;
+    scene.add(leafMesh);
+  }
+}
+addVine(200,250,5);
+
+// ========================================================
+// ==================== 左下角藤编容器+土豆 ====================
+// ========================================================
+cyl(22,18,20,12,mat.rattan, 65,4,350);
+// 土豆
+sphere(7,mat.potato, 58,22,348);
+sphere(6,mat.potato, 70,22,345);
+sphere(5.5,mat.potato, 63,26,340);
+
+// ========================================================
+// ==================== 小台面+面包 ====================
+// ========================================================
+box(30,35,22, mat.creamDark, 295,5,190);
+cyl(9,9,4,12,mat.bread, 308,40,200);
+
+// ========================================================
+// ==================== 窗台盆栽 ====================
+// ========================================================
+box(15,22,15, mat.pot, 538,155,155);
+box(15,3,15, mat.potRim, 538,177,155);
+// 叶子
+for(let i=0;i<5;i++){
+  const leafGeo=new THREE.ConeGeometry(3,15,4);
+  const leafMesh=new THREE.Mesh(leafGeo, i%2===0?mat.leaf:mat.leafDark);
+  leafMesh.position.set(545+Math.sin(i)*4, 185+i*3, 162+Math.cos(i)*3);
+  leafMesh.rotation.z=(Math.random()-0.5)*0.4;
+  leafMesh.castShadow=true;
+  scene.add(leafMesh);
+}
+
+// ========================================================
+// ==================== 灯光 ====================
+// ========================================================
+
+// 环境光（暖色）
+const ambient=new THREE.AmbientLight(0xFFF0E0,0.5);
+scene.add(ambient);
+
+// 主光源（从右上窗户方向，暖黄色）
+const mainLight=new THREE.DirectionalLight(0xFFE8C0,1.2);
+mainLight.position.set(500,500,400);
+mainLight.castShadow=true;
+mainLight.shadow.mapSize.width=2048;
+mainLight.shadow.mapSize.height=2048;
+mainLight.shadow.camera.near=10;
+mainLight.shadow.camera.far=1500;
+mainLight.shadow.camera.left=-400;
+mainLight.shadow.camera.right=400;
+mainLight.shadow.camera.top=400;
+mainLight.shadow.camera.bottom=-200;
+mainLight.shadow.bias=-0.001;
+mainLight.shadow.radius=4;
+scene.add(mainLight);
+
+// 补光（从左侧，冷色）
+const fillLight=new THREE.DirectionalLight(0xC0D8F0,0.3);
+fillLight.position.set(-300,300,200);
+scene.add(fillLight);
+
+// 顶部柔光
+const topLight=new THREE.DirectionalLight(0xFFF8F0,0.4);
+topLight.position.set(200,600,200);
+scene.add(topLight);
+
+// ========================================================
+// ==================== 渲染 ====================
+// ========================================================
+renderer.render(scene, camera);
+
+// 导出为图片
+const link=document.createElement('a');
+link.download='kitchen_2.5d.png';
+link.href=renderer.domElement.toDataURL('image/png');
+link.textContent='下载高清图片';
+link.style.cssText='position:fixed;bottom:20px;right:20px;padding:12px 24px;background:#A8D8C8;color:#333;text-decoration:none;border-radius:8px;font-family:sans-serif;font-size:14px;z-index:999;box-shadow:0 4px 12px rgba(0,0,0,0.15)';
+document.body.appendChild(link);
+
+console.log('Rendered');
+</script>
 </body>
 </html>
