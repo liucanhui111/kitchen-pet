@@ -1,0 +1,14 @@
+config_version=5
+
+[application]
+config/name="Kitchen Cat"
+run/main_scene="res://scenes/kitchen.tscn"
+
+[display]
+window/size/viewport_width=900
+window/size/viewport_height=600
+window/stretch/mode="canvas_items"
+window/stretch/aspect="keep"
+
+[rendering]
+renderer/rendering_method="gl_compatibility"
