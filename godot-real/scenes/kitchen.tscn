@@ -1,0 +1,95 @@
+[gd_scene load_steps=8 format=3]
+
+[ext_resource type="Texture2D" path="res://assets/kitchen_bg.png" id="1_bg"]
+[ext_resource type="Texture2D" path="res://assets/fridge.png" id="2_fridge"]
+[ext_resource type="Texture2D" path="res://assets/stove.png" id="3_stove"]
+[ext_resource type="Texture2D" path="res://assets/cabinet.png" id="4_cabinet"]
+[ext_resource type="Script" path="res://scripts/kitchen.gd" id="5_main"]
+[ext_resource type="Script" path="res://scripts/furniture.gd" id="6_fur"]
+
+[sub_resource type="RectangleShape2D" id="rect1"]
+size = Vector2(140, 350)
+
+[sub_resource type="RectangleShape2D" id="rect2"]
+size = Vector2(200, 300)
+
+[sub_resource type="RectangleShape2D" id="rect3"]
+size = Vector2(170, 320)
+
+[node name="Kitchen" type="Node2D"]
+script = ExtResource("5_main")
+
+[node name="Background" type="Sprite2D" parent="."]
+position = Vector2(450, 300)
+texture = ExtResource("1_bg")
+texture_filter = 1
+
+[node name="Furniture" type="Node2D" parent="."]
+
+[node name="Fridge" type="Area2D" parent="Furniture"]
+position = Vector2(100, 350)
+script = ExtResource("6_fur")
+furniture_name = "冰箱"
+
+[node name="Sprite" type="Sprite2D" parent="Furniture/Fridge"]
+texture = ExtResource("2_fridge")
+texture_filter = 1
+
+[node name="Collision" type="CollisionShape2D" parent="Furniture/Fridge"]
+shape = SubResource("rect1")
+
+[node name="Label" type="Label" parent="Furniture/Fridge"]
+offset_left = -30.0
+offset_top = -180.0
+offset_right = 30.0
+offset_bottom = -160.0
+text = "冰箱"
+horizontal_alignment = 1
+
+[node name="Stove" type="Area2D" parent="Furniture"]
+position = Vector2(310, 330)
+script = ExtResource("6_fur")
+furniture_name = "灶台"
+
+[node name="Sprite" type="Sprite2D" parent="Furniture/Stove"]
+texture = ExtResource("3_stove")
+texture_filter = 1
+
+[node name="Collision" type="CollisionShape2D" parent="Furniture/Stove"]
+shape = SubResource("rect2")
+
+[node name="Label" type="Label" parent="Furniture/Stove"]
+offset_left = -30.0
+offset_top = -160.0
+offset_right = 30.0
+offset_bottom = -140.0
+text = "灶台"
+horizontal_alignment = 1
+
+[node name="Cabinet" type="Area2D" parent="Furniture"]
+position = Vector2(510, 330)
+script = ExtResource("6_fur")
+furniture_name = "橱柜"
+
+[node name="Sprite" type="Sprite2D" parent="Furniture/Cabinet"]
+texture = ExtResource("4_cabinet")
+texture_filter = 1
+
+[node name="Collision" type="CollisionShape2D" parent="Furniture/Cabinet"]
+shape = SubResource("rect3")
+
+[node name="Label" type="Label" parent="Furniture/Cabinet"]
+offset_left = -30.0
+offset_top = -170.0
+offset_right = 30.0
+offset_bottom = -150.0
+text = "橱柜"
+horizontal_alignment = 1
+
+[node name="Notification" type="Label" parent="."]
+offset_left = 200.0
+offset_top = 20.0
+offset_right = 700.0
+offset_bottom = 50.0
+horizontal_alignment = 1
+text = "点击家具互动！"
