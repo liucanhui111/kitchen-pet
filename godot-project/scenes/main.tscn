@@ -1,0 +1,90 @@
+gd_scene load_steps=4 format=3 uid="uid://main001"
+
+[ext_resource type="Texture2D" path="res://assets/kitchen_900x1200.png" id="1_bg"]
+[ext_resource type="Script" path="res://scripts/game_manager.gd" id="2_gm"]
+[ext_resource type="Script" path="res://scripts/pet.gd" id="3_pet"]
+
+[node name="Main" type="Node2D"]
+script = ExtResource("2_gm")
+
+[node name="Background" type="Sprite2D" parent="."]
+position = Vector2(450, 600)
+texture = ExtResource("1_bg")
+
+[node name="Pet" type="CharacterBody2D" parent="."]
+position = Vector2(450, 720)
+script = ExtResource("3_pet")
+
+[node name="Sprite" type="Sprite2D" parent="Pet"]
+position = Vector2(0, -80)
+texture_filter = 0
+
+[node name="CollisionShape" type="CollisionShape2D" parent="Pet"]
+
+[node name="InteractionZones" type="Node2D" parent="."]
+
+[node name="FridgeZone" type="Area2D" parent="InteractionZones"]
+position = Vector2(185, 495)
+
+[node name="Collision" type="CollisionShape2D" parent="InteractionZones/FridgeZone"]
+
+[node name="StoveZone" type="Area2D" parent="InteractionZones"]
+position = Vector2(367, 415)
+
+[node name="Collision" type="CollisionShape2D" parent="InteractionZones/StoveZone"]
+
+[node name="SinkZone" type="Area2D" parent="InteractionZones"]
+position = Vector2(522, 390)
+
+[node name="Collision" type="CollisionShape2D" parent="InteractionZones/SinkZone"]
+
+[node name="WindowZone" type="Area2D" parent="InteractionZones"]
+position = Vector2(657, 255)
+
+[node name="Collision" type="CollisionShape2D" parent="InteractionZones/WindowZone"]
+
+[node name="TableZone" type="Area2D" parent="InteractionZones"]
+position = Vector2(575, 645)
+
+[node name="Collision" type="CollisionShape2D" parent="InteractionZones/TableZone"]
+
+[node name="PlantZone" type="Area2D" parent="InteractionZones"]
+position = Vector2(677, 440)
+
+[node name="Collision" type="CollisionShape2D" parent="InteractionZones/PlantZone"]
+
+[node name="UILayer" type="CanvasLayer" parent="."]
+
+[node name="HUD" type="Control" parent="UILayer"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="StatusPanel" type="Panel" parent="UILayer/HUD"]
+offset_left = 10.0
+offset_top = 10.0
+offset_right = 350.0
+offset_bottom = 65.0
+
+[node name="ActionBar" type="HBoxContainer" parent="UILayer/HUD"]
+anchors_preset = 7
+anchor_left = 0.5
+anchor_top = 1.0
+anchor_right = 0.5
+anchor_bottom = 1.0
+offset_left = -180.0
+offset_top = -70.0
+offset_right = 180.0
+offset_bottom = -10.0
+grow_horizontal = 2
+grow_vertical = 0
+
+[node name="NotificationLabel" type="Label" parent="UILayer/HUD"]
+offset_left = 200.0
+offset_top = 70.0
+offset_right = 700.0
+offset_bottom = 100.0
+horizontal_alignment = 1
