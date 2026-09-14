@@ -1,42 +1,40 @@
-[gd_scene load_steps=8 format=3]
+[gd_scene load_steps=9 format=3]
 
-[ext_resource type="Texture2D" path="res://assets/kitchen_bg.png" id="1_bg"]
-[ext_resource type="Texture2D" path="res://assets/fridge.png" id="2_fridge"]
-[ext_resource type="Texture2D" path="res://assets/stove.png" id="3_stove"]
-[ext_resource type="Texture2D" path="res://assets/cabinet.png" id="4_cabinet"]
-[ext_resource type="Script" path="res://scripts/kitchen.gd" id="5_main"]
-[ext_resource type="Script" path="res://scripts/furniture.gd" id="6_fur"]
+[ext_resource type="Texture2D" path="res://assets/kitchen_bg.png" id="1"]
+[ext_resource type="Texture2D" path="res://assets/fridge.png" id="2"]
+[ext_resource type="Texture2D" path="res://assets/stove.png" id="3"]
+[ext_resource type="Texture2D" path="res://assets/cabinet.png" id="4"]
+[ext_resource type="Script" path="res://scripts/kitchen.gd" id="5"]
+[ext_resource type="Script" path="res://scripts/furniture.gd" id="6"]
 
-[sub_resource type="RectangleShape2D" id="rect1"]
+[sub_resource type="RectangleShape2D" id="s1"]
 size = Vector2(140, 350)
 
-[sub_resource type="RectangleShape2D" id="rect2"]
+[sub_resource type="RectangleShape2D" id="s2"]
 size = Vector2(200, 300)
 
-[sub_resource type="RectangleShape2D" id="rect3"]
+[sub_resource type="RectangleShape2D" id="s3"]
 size = Vector2(170, 320)
 
 [node name="Kitchen" type="Node2D"]
-script = ExtResource("5_main")
+script = ExtResource("5")
 
 [node name="Background" type="Sprite2D" parent="."]
 position = Vector2(450, 300)
-texture = ExtResource("1_bg")
-texture_filter = 1
+texture = ExtResource("1")
 
 [node name="Furniture" type="Node2D" parent="."]
 
 [node name="Fridge" type="Area2D" parent="Furniture"]
 position = Vector2(100, 350)
-script = ExtResource("6_fur")
+script = ExtResource("6")
 furniture_name = "冰箱"
 
 [node name="Sprite" type="Sprite2D" parent="Furniture/Fridge"]
-texture = ExtResource("2_fridge")
-texture_filter = 1
+texture = ExtResource("2")
 
 [node name="Collision" type="CollisionShape2D" parent="Furniture/Fridge"]
-shape = SubResource("rect1")
+shape = SubResource("s1")
 
 [node name="Label" type="Label" parent="Furniture/Fridge"]
 offset_left = -30.0
@@ -48,15 +46,14 @@ horizontal_alignment = 1
 
 [node name="Stove" type="Area2D" parent="Furniture"]
 position = Vector2(310, 330)
-script = ExtResource("6_fur")
+script = ExtResource("6")
 furniture_name = "灶台"
 
 [node name="Sprite" type="Sprite2D" parent="Furniture/Stove"]
-texture = ExtResource("3_stove")
-texture_filter = 1
+texture = ExtResource("3")
 
 [node name="Collision" type="CollisionShape2D" parent="Furniture/Stove"]
-shape = SubResource("rect2")
+shape = SubResource("s2")
 
 [node name="Label" type="Label" parent="Furniture/Stove"]
 offset_left = -30.0
@@ -68,15 +65,14 @@ horizontal_alignment = 1
 
 [node name="Cabinet" type="Area2D" parent="Furniture"]
 position = Vector2(510, 330)
-script = ExtResource("6_fur")
+script = ExtResource("6")
 furniture_name = "橱柜"
 
 [node name="Sprite" type="Sprite2D" parent="Furniture/Cabinet"]
-texture = ExtResource("4_cabinet")
-texture_filter = 1
+texture = ExtResource("4")
 
 [node name="Collision" type="CollisionShape2D" parent="Furniture/Cabinet"]
-shape = SubResource("rect3")
+shape = SubResource("s3")
 
 [node name="Label" type="Label" parent="Furniture/Cabinet"]
 offset_left = -30.0
