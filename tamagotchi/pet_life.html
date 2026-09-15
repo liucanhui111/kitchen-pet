@@ -59,6 +59,8 @@ const pet={x:180,y:260,targetX:180,targetY:260,state:'idle',dir:1,blink:0,emo:''
   holding:null, // 正在拿着的食物
   eatTimer:0,   // 吃东西计时器
   eatBites:0,   // 咬的次数
+  handY:30,     // 手的高度（30=下方，-10=嘴边）
+  liftTimer:0,  // 举起计时器
 };
 
 // ===== 冰箱状态 =====
@@ -262,15 +264,31 @@ function drawPet(){
   ctx.beginPath();ctx.ellipse(x+18,py+2,5,3,0,0,Math.PI*2);ctx.fill();
   
   // 嘴巴 - 吃东西动画
-  if(st==='eat'){
-    const mouthOpen=Math.abs(Math.sin(pet.eatTimer*.3))*4;
-    ctx.fillStyle='#C06030';
-    ctx.beginPath();ctx.ellipse(x,py+6,4+mouthOpen*.5,3+mouthOpen,0,0,Math.PI*2);ctx.fill();
-    // 咀嚼时的碎屑
-    if(pet.eatBites>0&&pet.eatBites%2===0){
-      ctx.fillStyle='rgba(200,150,50,0.5)';
-      ctx.beginPath();ctx.arc(x-10,py+12+Math.sin(pet.eatTimer*.5)*3,2,0,Math.PI*2);ctx.fill();
-      ctx.beginPath();ctx.arc(x+12,py+10+Math.cos(pet.eatTimer*.4)*3,1.5,0,Math.PI*2);ctx.fill();
+  if(st==='eat'||st==='eating'||st==='lifting'){
+    if(st==='eating'){
+      // 咀嚼动画 - 嘴巴快速张合
+      const chewPhase=Math.abs(Math.sin(pet.eatTimer*.6));
+      const mouthW=3+chewPhase*5; // 嘴巴宽度变化
+      const mouthH=2+chewPhase*4; // 嘴巴高度变化
+      ctx.fillStyle='#C06030';
+      ctx.beginPath();ctx.ellipse(x,py+6,mouthW,mouthH,0,0,Math.PI*2);ctx.fill();
+      // 嘴巴内部
+      ctx.fillStyle='#8B3010';
+      ctx.beginPath();ctx.ellipse(x,py+6,mouthW*.6,mouthH*.5,0,0,Math.PI*2);ctx.fill();
+      // 咀嚼碎屑
+      if(pet.eatBites>0&&pet.eatBites%2===0){
+        ctx.fillStyle='rgba(200,150,50,0.6)';
+        ctx.beginPath();ctx.arc(x-10,py+12+Math.sin(pet.eatTimer*.5)*3,2,0,Math.PI*2);ctx.fill();
+        ctx.beginPath();ctx.arc(x+12,py+10+Math.cos(pet.eatTimer*.4)*3,1.5,0,Math.PI*2);ctx.fill();
+      }
+    }else if(st==='lifting'){
+      // 举起时嘴巴微张准备吃
+      ctx.fillStyle='#C06030';
+      ctx.beginPath();ctx.ellipse(x,py+6,3,2,0,0,Math.PI*2);ctx.fill();
+    }else{
+      // 普通吃状态
+      ctx.fillStyle='#C06030';
+      ctx.beginPath();ctx.ellipse(x,py+6,4,3,0,0,Math.PI*2);ctx.fill();
     }
   }else if(st==='happy'){
     ctx.strokeStyle='#B07030';ctx.lineWidth=2;
@@ -288,29 +306,33 @@ function drawPet(){
   // ===== 小手拿食物 =====
   if(pet.holding){
     const food=pet.holding;
-    // 左手举起食物
-    const handX=x-20;
-    const handY=py-5;
+    const handX=x-22;
+    const handTargetY=py-8; // 嘴边位置
+    const handCurrentY=py+pet.handY; // 当前手位置
     
-    // 手臂
+    // 手臂（从身体到手）
+    ctx.strokeStyle='#F0A050';ctx.lineWidth=6;ctx.lineCap='round';
+    ctx.beginPath();ctx.moveTo(x-18,py+5);ctx.quadraticCurveTo(handX-5,py+15,handX,handCurrentY);ctx.stroke();
+    
+    // 手掌
     ctx.fillStyle='#F0A050';
-    ctx.beginPath();ctx.ellipse(handX,handY,6,5,-.5,0,Math.PI*2);ctx.fill();
+    ctx.beginPath();ctx.ellipse(handX,handCurrentY,7,6,-.3,0,Math.PI*2);ctx.fill();
     
-    // 食物
-    ctx.font='16px sans-serif';
-    const foodBob=st==='eat'?Math.sin(pet.eatTimer*.5)*3:0;
-    ctx.fillText(food.icon,handX-8,handY-5+foodBob);
-    
-    // 吃的动作 - 食物靠近嘴巴
-    if(st==='eat'){
-      const eatPhase=Math.sin(pet.eatTimer*.3);
-      const foodToMouth=eatPhase>0.5;
-      if(foodToMouth){
-        // 食物移到嘴边
-        ctx.font='12px sans-serif';
-        ctx.fillText(food.icon,x-5,py+2);
-      }
+    // 食物（在手掌上方）
+    ctx.font='14px sans-serif';
+    if(pet.state==='eating'){
+      // 吃东西时食物在嘴边抖动
+      const chewBob=Math.sin(pet.eatTimer*.8)*2;
+      ctx.fillText(food.icon,x-6,py+1+chewBob);
+    }else{
+      // 拿着时食物在手上方
+      ctx.fillText(food.icon,handX-7,handCurrentY-10);
     }
+    
+    // 右手正常
+    ctx.fillStyle='#F0A050';
+    ctx.beginPath();ctx.ellipse(x+18,py+10,5,4,.3,0,Math.PI*2);ctx.fill();
+    
   }else{
     // 普通小手
     ctx.fillStyle='#F0A050';
@@ -497,7 +519,19 @@ function drawBars(){
   ctx.font='10px sans-serif';ctx.fillStyle='rgba(255,255,255,0.7)';ctx.textAlign='center';ctx.fillText(ROOM_NAMES[S.room],W/2,H-10);ctx.textAlign='left';
   ctx.font='9px sans-serif';ctx.fillStyle='#FFD700';ctx.fillText('💰'+S.coins,W-50,14);
   // 提示
-  if(fridge.open){ctx.font='9px sans-serif';ctx.fillStyle='rgba(255,255,255,0.5)';ctx.textAlign='center';ctx.fillText('点击食物取出 | 按C关闭冰箱',W/2,H-25);ctx.textAlign='left'}
+  if(fridge.open){
+    ctx.font='9px sans-serif';ctx.fillStyle='rgba(255,255,255,0.5)';ctx.textAlign='center';
+    ctx.fillText('点击食物取出 | 点击冰箱外关闭',W/2,H-25);ctx.textAlign='left';
+    // 关闭按钮
+    ctx.fillStyle='rgba(255,100,100,0.8)';
+    roundRect(95,105,18,18,4);ctx.fill();
+    ctx.font='12px sans-serif';ctx.fillStyle='#fff';ctx.textAlign='center';
+    ctx.fillText('✕',104,118);ctx.textAlign='left';
+  }
+  if(pet.holding&&pet.state==='holding'){
+    ctx.font='9px sans-serif';ctx.fillStyle='rgba(255,255,255,0.5)';ctx.textAlign='center';
+    ctx.fillText('点击地面喂宠物吃',W/2,H-35);ctx.textAlign='left';
+  }
 }
 
 function drawParticles(){
@@ -540,59 +574,71 @@ function getClickedFood(mx,my){
 function grabFood(food){
   sfx('grab');
   pet.holding=food;
-  pet.state='idle';
-  pet.emo=food.icon;pet.emoT=60;
-  showNotif(`拿了${food.icon}${food.name}！`);
+  pet.handY=30; // 手从下方开始
+  pet.state='holding';
+  pet.emo=food.icon;pet.emoT=80;
+  showNotif(`拿了${food.icon}${food.name}！点击地面吃`);
   
   // 从冰箱移除
   const idx=fridge.foods.indexOf(food);
   if(idx>=0)fridge.foods.splice(idx,1);
-  
-  // 关冰箱
-  setTimeout(()=>{fridge.open=false;sfx('close')},500);
+  // 冰箱不自动关闭，等主人点关闭
 }
 
 function eatFood(){
   if(!pet.holding)return;
   const food=pet.holding;
   
-  pet.state='eat';
+  pet.state='lifting'; // 先举起来
+  pet.liftTimer=0;
   pet.eatTimer=0;
   pet.eatBites=0;
-  sfx('eat');
+  pet.handY=30; // 手从下方开始
   
-  // 吃完计时
-  const eatInterval=setInterval(()=>{
-    pet.eatTimer++;
-    pet.eatBites++;
-    if(pet.eatBites%3===0)sfx('eat');
+  // 举起动画（0.8秒）
+  const liftInterval=setInterval(()=>{
+    pet.liftTimer++;
+    pet.handY=Math.max(-10,30-pet.liftTimer*5); // 手从下往上提
     
-    if(pet.eatBites>=12){
-      clearInterval(eatInterval);
-      // 吃完效果
-      S.hunger=Math.min(100,S.hunger+food.hunger);
-      S.happy=Math.min(100,S.happy+food.happy);
-      S.coins+=2;
-      pet.holding=null;
-      pet.state='idle';
-      pet.emo='😋';pet.emoT=60;
-      emit(pet.x,pet.y-20,'food',5);
-      showNotif(`吃了${food.icon}${food.name}！+${food.hunger}饱食+${food.happy}心情`);
+    if(pet.liftTimer>=8){
+      clearInterval(liftInterval);
+      pet.state='eating'; // 开始吃
+      sfx('eat');
       
-      // 冰箱补充食物（延迟）
-      setTimeout(()=>{
-        if(fridge.foods.length<8){
-          const newFoods=[
-            {id:'apple',name:'苹果',icon:'🍎',hunger:15,happy:5,color:'#FF4444'},
-            {id:'banana',name:'香蕉',icon:'🍌',hunger:12,happy:3,color:'#FFD700'},
-            {id:'cake',name:'蛋糕',icon:'🍰',hunger:10,happy:15,color:'#FFB6C1'},
-            {id:'milk',name:'牛奶',icon:'🥛',hunger:8,happy:5,color:'#FFFFFF'},
-          ];
-          fridge.foods.push(newFoods[Math.floor(Math.random()*newFoods.length)]);
+      // 咀嚼动画（2.4秒）
+      const eatInterval=setInterval(()=>{
+        pet.eatTimer++;
+        pet.eatBites++;
+        if(pet.eatBites%4===0)sfx('eat');
+        
+        if(pet.eatBites>=12){
+          clearInterval(eatInterval);
+          // 吃完效果
+          S.hunger=Math.min(100,S.hunger+food.hunger);
+          S.happy=Math.min(100,S.happy+food.happy);
+          S.coins+=2;
+          pet.holding=null;
+          pet.state='idle';
+          pet.emo='😋';pet.emoT=80;
+          emit(pet.x,pet.y-20,'food',6);
+          showNotif(`吃了${food.icon}${food.name}！+${food.hunger}饱食+${food.happy}心情`);
+          
+          // 冰箱补充食物（延迟15秒）
+          setTimeout(()=>{
+            if(fridge.foods.length<8){
+              const newFoods=[
+                {id:'apple',name:'苹果',icon:'🍎',hunger:15,happy:5,color:'#FF4444'},
+                {id:'banana',name:'香蕉',icon:'🍌',hunger:12,happy:3,color:'#FFD700'},
+                {id:'cake',name:'蛋糕',icon:'🍰',hunger:10,happy:15,color:'#FFB6C1'},
+                {id:'milk',name:'牛奶',icon:'🥛',hunger:8,happy:5,color:'#FFFFFF'},
+              ];
+              fridge.foods.push(newFoods[Math.floor(Math.random()*newFoods.length)]);
+            }
+          },15000);
         }
-      },10000);
+      },200);
     }
-  },200);
+  },100);
 }
 
 function interactItem(item){
@@ -712,8 +758,8 @@ canvas.addEventListener('click',e=>{
   // 点击地面移动
   pet.targetX=mx;pet.targetY=my;
   
-  // 如果拿着食物，点地面就吃
-  if(pet.holding)eatFood();
+  // 如果拿着食物，点地面开始吃
+  if(pet.holding&&pet.state==='holding')eatFood();
 });
 
 // ===== 游戏更新 =====
