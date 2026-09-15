@@ -47,400 +47,167 @@ canvas.style.width=W+'px';canvas.style.height=H+'px';
 ctx.scale(2,2);
 
 // ===== 音效 =====
-const audio=new(window.AudioContext||window.webkitAudioContext)();
-function beep(f=440,d=.05,t='square'){const o=audio.createOscillator(),g=audio.createGain();o.type=t;o.frequency.value=f;g.gain.value=.08;o.connect(g);g.connect(audio.destination);o.start();o.stop(audio.currentTime+d)}
-function sfx(n){switch(n){case'click':beep(1000,.02);break;case'eat':beep(800,.05);setTimeout(()=>beep(600,.05),60);break;case'happy':beep(523,.08);setTimeout(()=>beep(659,.08),100);setTimeout(()=>beep(784,.12),200);break;case'sleep':beep(262,.15,'sine');break;case'tv':beep(300,.03);setTimeout(()=>beep(500,.03),50);break;case'cook':beep(400,.05);setTimeout(()=>beep(600,.05),80);break;case'open':beep(200,.08,'sine');break;case'close':beep(150,.08,'sine');break}}
-
-// ===== 房间定义 =====
-const ROOMS=['kitchen','living','bedroom'];
-const ROOM_NAMES={kitchen:'🍳 厨房',living:'🛋️ 客厅',bedroom:'🛏️ 卧室'};
+const audioCtx=new(window.AudioContext||window.webkitAudioContext)();
+function beep(f=440,d=.05,t='square'){const o=audioCtx.createOscillator(),g=audioCtx.createGain();o.type=t;o.frequency.value=f;g.gain.value=.08;o.connect(g);g.connect(audioCtx.destination);o.start();o.stop(audioCtx.currentTime+d)}
+function sfx(n){switch(n){case'click':beep(1000,.02);break;case'open':beep(200,.1,'sine');break;case'close':beep(150,.1,'sine');break;case'eat':beep(800,.05);setTimeout(()=>beep(600,.05),60);break;case'grab':beep(500,.03);break;case'cook':beep(400,.05);setTimeout(()=>beep(600,.05),80);break;case'tv':beep(300,.03);setTimeout(()=>beep(500,.03),50);break;case'sleep':beep(262,.15,'sine');break}}
 
 // ===== 游戏状态 =====
 const S={hunger:80,happy:75,energy:70,clean:90,age:0,coins:50,room:'kitchen'};
 
 // ===== 宠物 =====
-const pet={x:180,y:260,targetX:180,targetY:260,state:'idle',frame:0,dir:1,blink:0,emo:'',emoT:0,bob:0};
-
-// ===== 家具状态 =====
-const F={
-  fridge:{open:false,food:5},
-  stove:{on:false,cookT:0,foodReady:false},
-  sink:{running:false},
-  tv:{on:false,channel:0},
-  sofa:{sitting:false},
-  bed:{sleeping:false},
+const pet={x:180,y:260,targetX:180,targetY:260,state:'idle',dir:1,blink:0,emo:'',emoT:0,bob:0,
+  holding:null, // 正在拿着的食物
+  eatTimer:0,   // 吃东西计时器
+  eatBites:0,   // 咬的次数
 };
 
-// ===== 家具定义 =====
+// ===== 冰箱状态 =====
+const fridge={
+  open:false,
+  // 冰箱里的食物
+  foods:[
+    {id:'apple',name:'苹果',icon:'🍎',hunger:15,happy:5,color:'#FF4444'},
+    {id:'banana',name:'香蕉',icon:'🍌',hunger:12,happy:3,color:'#FFD700'},
+    {id:'cake',name:'蛋糕',icon:'🍰',hunger:10,happy:15,color:'#FFB6C1'},
+    {id:'milk',name:'牛奶',icon:'🥛',hunger:8,happy:5,color:'#FFFFFF'},
+    {id:'juice',name:'果汁',icon:'🧃',hunger:5,happy:8,color:'#FF8C00'},
+    {id:'fish',name:'鱼',icon:'🐟',hunger:20,happy:10,color:'#4ECDC4'},
+    {id:'egg',name:'鸡蛋',icon:'🥚',hunger:12,happy:2,color:'#FFF8DC'},
+    {id:'carrot',name:'胡萝卜',icon:'🥕',hunger:10,happy:3,color:'#FF6600'},
+  ],
+  selectedFood:null, // 选中的食物
+  hoverFood:null,    // 悬停的食物
+};
+
+// ===== 其他家具状态 =====
+const F={stove:{on:false,cookT:0,foodReady:false},tv:{on:false},sink:{running:false},bed:{sleeping:false},lamp:false};
+
+// ===== 房间定义 =====
+const ROOMS=['kitchen','living','bedroom'];
+const ROOM_NAMES={kitchen:'🍳 厨房',living:'🛋️ 客厅',bedroom:'🛏️ 卧室'};
+
 const FURNITURE={
   kitchen:[
-    {id:'fridge',x:30,y:120,w:60,h:120,label:'冰箱',icon:'🧊',action:'feed'},
-    {id:'stove',x:110,y:120,w:70,h:80,label:'灶台',icon:'🍳',action:'cook'},
-    {id:'sink',x:200,y:140,w:50,h:60,label:'水槽',icon:'🚿',action:'wash'},
-    {id:'table',x:270,y:180,w:70,h:50,label:'餐桌',icon:'🍽️',action:'eat'},
+    {id:'fridge',x:20,y:100,w:70,h:140,label:'冰箱',icon:'🧊'},
+    {id:'stove',x:110,y:120,w:70,h:80,label:'灶台',icon:'🍳'},
+    {id:'sink',x:200,y:140,w:50,h:60,label:'水槽',icon:'🚿'},
+    {id:'table',x:270,y:180,w:70,h:50,label:'餐桌',icon:'🍽️'},
   ],
   living:[
-    {id:'tv',x:40,y:100,w:80,h:60,label:'电视',icon:'📺',action:'watch'},
-    {id:'sofa',x:150,y:200,w:100,h:50,label:'沙发',icon:'🛋️',action:'rest'},
-    {id:'shelf',x:280,y:100,w:50,h:100,label:'书架',icon:'📚',action:'read'},
-    {id:'plant',x:30,y:220,w:30,h:50,label:'绿植',icon:'🌿',action:'water'},
+    {id:'tv',x:40,y:100,w:80,h:60,label:'电视',icon:'📺'},
+    {id:'sofa',x:150,y:200,w:100,h:50,label:'沙发',icon:'🛋️'},
+    {id:'shelf',x:280,y:100,w:50,h:100,label:'书架',icon:'📚'},
+    {id:'plant',x:30,y:220,w:30,h:50,label:'绿植',icon:'🌿'},
   ],
   bedroom:[
-    {id:'bed',x:30,y:160,w:100,h:70,label:'床',icon:'🛏️',action:'sleep'},
-    {id:'wardrobe',x:160,y:100,w:60,h:100,label:'衣柜',icon:'👔',action:'dress'},
-    {id:'desk',x:250,y:150,w:70,h:50,label:'书桌',icon:'📖',action:'study'},
-    {id:'lamp',x:280,y:100,w:30,h:40,label:'台灯',icon:'💡',action:'light'},
+    {id:'bed',x:30,y:160,w:100,h:70,label:'床',icon:'🛏️'},
+    {id:'wardrobe',x:160,y:100,w:60,h:100,label:'衣柜',icon:'👔'},
+    {id:'desk',x:250,y:150,w:70,h:50,label:'书桌',icon:'📖'},
+    {id:'lamp',x:280,y:100,w:30,h:40,label:'台灯',icon:'💡'},
   ],
 };
 
 let hoverItem=null;
 let notif='',notifT=0;
-function showNotif(t){notif=t;notifT=120;sfx('click')}
+function showNotif(t){notif=t;notifT=120}
 
 // ===== 粒子 =====
 const particles=[];
 function emit(x,y,type,n=5){for(let i=0;i<n;i++)particles.push({x,y,vx:(Math.random()-.5)*3,vy:-Math.random()*3-1,life:1,decay:.02,size:6+Math.random()*6,type})}
 
-// ===== 绘制房间 =====
-function drawRoom(){
-  const room=S.room;
-  
-  // 地板
-  const floorG=ctx.createLinearGradient(0,200,0,H);
-  if(room==='kitchen'){floorG.addColorStop(0,'#E8D8C0');floorG.addColorStop(1,'#D4C4A8')}
-  else if(room==='living'){floorG.addColorStop(0,'#C8B8A0');floorG.addColorStop(1,'#B8A890')}
-  else{floorG.addColorStop(0,'#D8C8B0');floorG.addColorStop(1,'#C8B8A0')}
-  ctx.fillStyle=floorG;ctx.fillRect(0,200,W,H-200);
-  
-  // 地砖线
-  ctx.strokeStyle='rgba(0,0,0,0.05)';ctx.lineWidth=1;
-  for(let x=0;x<W;x+=40){ctx.beginPath();ctx.moveTo(x,200);ctx.lineTo(x,H);ctx.stroke()}
-  for(let y=200;y<H;y+=40){ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(W,y);ctx.stroke()}
-  
-  // 墙壁
-  const wallG=ctx.createLinearGradient(0,0,0,200);
-  if(room==='kitchen'){wallG.addColorStop(0,'#F5F0E8');wallG.addColorStop(1,'#EDE5D8')}
-  else if(room==='living'){wallG.addColorStop(0,'#E8E0D0');wallG.addColorStop(1,'#DDD5C5')}
-  else{wallG.addColorStop(0,'#E0D8E8');wallG.addColorStop(1,'#D5CDE0')}
-  ctx.fillStyle=wallG;ctx.fillRect(0,0,W,200);
-  
-  // 墙纸纹理
-  ctx.strokeStyle='rgba(0,0,0,0.03)';ctx.lineWidth=.5;
-  for(let y=0;y<200;y+=20){ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(W,y);ctx.stroke()}
-  
-  // 踢脚线
-  ctx.fillStyle='rgba(100,80,60,0.2)';ctx.fillRect(0,195,W,5);
-  
-  // 窗户（所有房间通用）
-  drawWindow(140,30,80,80);
-  
-  // 画房间特有家具
-  FURNITURE[room].forEach(f=>drawFurniture(f));
-}
+// ===== 圆角矩形 =====
+function roundRect(x,y,w,h,r){ctx.beginPath();ctx.moveTo(x+r,y);ctx.lineTo(x+w-r,y);ctx.quadraticCurveTo(x+w,y,x+w,y+r);ctx.lineTo(x+w,y+h-r);ctx.quadraticCurveTo(x+w,y+h,x+w-r,y+h);ctx.lineTo(x+r,y+h);ctx.quadraticCurveTo(x,y+h,x,y+h-r);ctx.lineTo(x,y+r);ctx.quadraticCurveTo(x,y,x+r,y);ctx.closePath()}
 
-function drawWindow(x,y,w,h){
-  // 窗框
-  ctx.fillStyle='#D0C8B8';roundRect(x-4,y-4,w+8,h+8,4);ctx.fill();
-  // 窗玻璃
-  const skyG=ctx.createLinearGradient(x,y,x,y+h);
-  skyG.addColorStop(0,'#87CEEB');skyG.addColorStop(1,'#B0E0E6');
-  ctx.fillStyle=skyG;roundRect(x,y,w,h,2);ctx.fill();
-  // 窗框十字
-  ctx.strokeStyle='#C0B8A8';ctx.lineWidth=2;
-  ctx.beginPath();ctx.moveTo(x+w/2,y);ctx.lineTo(x+w/2,y+h);ctx.stroke();
-  ctx.beginPath();ctx.moveTo(x,y+h/2);ctx.lineTo(x+w,y+h/2);ctx.stroke();
-  // 窗帘
-  ctx.fillStyle='rgba(255,200,150,0.3)';
-  ctx.fillRect(x-10,y-5,15,h+10);
-  ctx.fillRect(x+w-5,y-5,15,h+10);
-  // 阳光
-  ctx.fillStyle='rgba(255,255,200,0.05)';
-  ctx.beginPath();ctx.moveTo(x,y+h);ctx.lineTo(x-30,H);ctx.lineTo(x+w+30,H);ctx.lineTo(x+w,y+h);ctx.fill();
-}
-
-function drawFurniture(f){
-  const isHover=hoverItem&&hoverItem.id===f.id;
-  const glow=isHover?1.08:1;
-  
-  ctx.save();
-  if(isHover){
-    ctx.shadowColor='rgba(255,200,100,0.4)';ctx.shadowBlur=12;
-  }
-  
-  switch(f.id){
-    case'fridge':drawFridge(f.x,f.y,f.w,f.h);break;
-    case'stove':drawStove(f.x,f.y,f.w,f.h);break;
-    case'sink':drawSink(f.x,f.y,f.w,f.h);break;
-    case'table':drawTable(f.x,f.y,f.w,f.h);break;
-    case'tv':drawTV(f.x,f.y,f.w,f.h);break;
-    case'sofa':drawSofa(f.x,f.y,f.w,f.h);break;
-    case'shelf':drawShelf(f.x,f.y,f.w,f.h);break;
-    case'plant':drawPlantDecor(f.x,f.y,f.w,f.h);break;
-    case'bed':drawBed(f.x,f.y,f.w,f.h);break;
-    case'wardrobe':drawWardrobe(f.x,f.y,f.w,f.h);break;
-    case'desk':drawDesk(f.x,f.y,f.w,f.h);break;
-    case'lamp':drawLamp(f.x,f.y,f.w,f.h);break;
-    default:ctx.fillStyle='#888';ctx.fillRect(f.x,f.y,f.w,f.h);
-  }
-  ctx.restore();
-  
-  // 悬停标签
-  if(isHover){
-    ctx.fillStyle='rgba(0,0,0,0.7)';
-    const tw=ctx.measureText(f.icon+' '+f.label).width;
-    roundRect(f.x+f.w/2-tw/2-8,f.y-22,tw+16,18,6);ctx.fill();
-    ctx.font='10px sans-serif';ctx.fillStyle='#fff';ctx.textAlign='center';
-    ctx.fillText(f.icon+' '+f.label,f.x+f.w/2,f.y-9);
-    ctx.textAlign='left';
-  }
-}
-
-// ----- 冰箱 -----
+// ============================================================
+// 冰箱绘制 - 带内部食物
+// ============================================================
 function drawFridge(x,y,w,h){
-  const isOpen=F.fridge.open;
-  // 主体
-  const g=ctx.createLinearGradient(x,y,x+w,y);
-  g.addColorStop(0,'#A8D8C8');g.addColorStop(0.5,'#B8E8D8');g.addColorStop(1,'#90C8B5');
-  ctx.fillStyle=g;roundRect(x,y,w,h,4);ctx.fill();
-  // 门缝
-  ctx.strokeStyle='#80B8A5';ctx.lineWidth=1;
-  ctx.beginPath();ctx.moveTo(x+5,y+h*.45);ctx.lineTo(x+w-5,y+h*.45);ctx.stroke();
-  // 把手
-  ctx.fillStyle='#707070';
-  roundRect(x+w-12,y+h*.2,6,20,3);ctx.fill();
-  roundRect(x+w-12,y+h*.55,6,16,3);ctx.fill();
-  // 开门效果
+  const isOpen=fridge.open;
+  
   if(isOpen){
-    ctx.fillStyle='rgba(60,60,60,0.8)';roundRect(x+5,y+5,w-10,h*.4-5,2);ctx.fill();
-    // 食物
-    ctx.fillStyle='#FF6B6B';ctx.beginPath();ctx.arc(x+20,y+20,5,0,Math.PI*2);ctx.fill();
-    ctx.fillStyle='#FFD700';ctx.beginPath();ctx.arc(x+35,y+25,4,0,Math.PI*2);ctx.fill();
-    ctx.fillStyle='#8BC34A';ctx.beginPath();ctx.arc(x+25,y+35,3,0,Math.PI*2);ctx.fill();
-  }
-  // 高光
-  ctx.fillStyle='rgba(255,255,255,0.15)';ctx.fillRect(x+4,y+4,8,h*.4);
-}
-
-// ----- 灶台 -----
-function drawStove(x,y,w,h){
-  // 台面
-  ctx.fillStyle='#F5F0E8';roundRect(x,y,w,h,3);ctx.fill();
-  // 台面顶
-  ctx.fillStyle='#E8E0D5';ctx.fillRect(x,y,w,6);
-  // 炉头
-  ctx.fillStyle='#555';
-  ctx.beginPath();ctx.arc(x+20,y+25,10,0,Math.PI*2);ctx.fill();
-  ctx.beginPath();ctx.arc(x+50,y+25,10,0,Math.PI*2);ctx.fill();
-  // 火焰
-  if(F.stove.on){
-    ctx.fillStyle='rgba(255,100,0,0.6)';
-    ctx.beginPath();ctx.arc(x+20,y+25,8+Math.sin(Date.now()/100)*2,0,Math.PI*2);ctx.fill();
-    ctx.fillStyle='rgba(255,200,0,0.4)';
-    ctx.beginPath();ctx.arc(x+50,y+25,7+Math.cos(Date.now()/120)*2,0,Math.PI*2);ctx.fill();
-    // 蒸汽
-    ctx.fillStyle='rgba(200,200,200,0.3)';
-    ctx.beginPath();ctx.arc(x+20+Math.sin(Date.now()/300)*5,y+10,5,0,Math.PI*2);ctx.fill();
-    ctx.beginPath();ctx.arc(x+50+Math.cos(Date.now()/400)*5,y+8,4,0,Math.PI*2);ctx.fill();
-  }
-  // 烤箱门
-  ctx.fillStyle='#444';roundRect(x+5,y+45,w-10,h-50,2);ctx.fill();
-  ctx.fillStyle='#333';roundRect(x+8,y+48,w-16,h-56,1);ctx.fill();
-  // 旋钮
-  for(let i=0;i<3;i++){ctx.fillStyle='#888';ctx.beginPath();ctx.arc(x+15+i*18,y+h-8,4,0,Math.PI*2);ctx.fill()}
-  // 烹饪进度
-  if(F.stove.cookT>0){
-    ctx.fillStyle='rgba(255,140,0,0.8)';roundRect(x+10,y-10,(w-20)*F.stove.cookT/100,6,3);ctx.fill();
-    ctx.font='8px sans-serif';ctx.fillStyle='#fff';ctx.textAlign='center';
-    ctx.fillText('烹饪中...',x+w/2,y-14);ctx.textAlign='left';
-  }
-  // 做好的食物
-  if(F.stove.foodReady){
-    ctx.font='16px sans-serif';ctx.fillText('🍕',x+w/2-8,y+30);
-  }
-}
-
-// ----- 水槽 -----
-function drawSink(x,y,w,h){
-  ctx.fillStyle='#E8E0D5';roundRect(x,y,w,h,3);ctx.fill();
-  // 水槽凹陷
-  ctx.fillStyle='#C0C0C0';roundRect(x+8,y+10,w-16,h-20,4);ctx.fill();
-  ctx.fillStyle='#A0A0A0';roundRect(x+10,y+12,w-20,h-24,3);ctx.fill();
-  // 水龙头
-  ctx.fillStyle='#B0B0B0';
-  ctx.fillRect(x+w/2-2,y-5,4,15);
-  ctx.beginPath();ctx.arc(x+w/2+8,y-2,4,0,Math.PI);ctx.fill();
-  // 水流
-  if(F.sink.running){
-    ctx.fillStyle='rgba(100,180,255,0.4)';
-    ctx.beginPath();ctx.moveTo(x+w/2,y+8);ctx.lineTo(x+w/2-5,y+25);ctx.lineTo(x+w/2+5,y+25);ctx.fill();
-    // 水滴
-    ctx.fillStyle='rgba(100,180,255,0.3)';
-    ctx.beginPath();ctx.arc(x+w/2+Math.sin(Date.now()/200)*8,y+30+Math.sin(Date.now()/300)*5,3,0,Math.PI*2);ctx.fill();
-  }
-}
-
-// ----- 餐桌 -----
-function drawTable(x,y,w,h){
-  ctx.fillStyle='#8B6914';ctx.fillRect(x+5,y+h-3,4,30);ctx.fillRect(x+w-9,y+h-3,4,30);
-  const g=ctx.createLinearGradient(x,y,x,y+h);
-  g.addColorStop(0,'#D4A574');g.addColorStop(1,'#C89464');
-  ctx.fillStyle=g;roundRect(x,y,w,h,4);ctx.fill();
-  // 桌上物品
-  ctx.font='12px sans-serif';ctx.fillText('☕',x+10,y+15);
-  ctx.fillText('🍞',x+35,y+15);
-}
-
-// ----- 电视 -----
-function drawTV(x,y,w,h){
-  // 电视柜
-  ctx.fillStyle='#6B4E3D';ctx.fillRect(x,y+h,w,20);
-  // 电视主体
-  ctx.fillStyle='#222';roundRect(x,y,w,h,4);ctx.fill();
-  // 屏幕
-  if(F.tv.on){
-    const ch=F.tv.channel;
-    if(ch===0){
-      // 综艺
-      ctx.fillStyle='#FF6B6B';ctx.fillRect(x+4,y+4,w-8,h-8);
-      ctx.fillStyle='#FFD700';ctx.font='20px sans-serif';ctx.fillText('🎬',x+w/2-10,y+h/2+5);
-      // 信号条
-      ctx.fillStyle='rgba(255,255,255,0.2)';
-      for(let i=0;i<5;i++){ctx.fillRect(x+4+i*(w-8)/5,y+h-12,(w-8)/5-2,8)}
-    }else if(ch===1){
-      // 自然
-      ctx.fillStyle='#87CEEB';ctx.fillRect(x+4,y+4,w-8,h-8);
-      ctx.fillStyle='#4CAF50';ctx.fillRect(x+4,y+h*.6,w-8,h*.4);
-      ctx.fillStyle='#FFD700';ctx.beginPath();ctx.arc(x+w*.7,y+20,10,0,Math.PI*2);ctx.fill();
-    }else{
-      // 音乐
-      ctx.fillStyle='#1a1a2e';ctx.fillRect(x+4,y+4,w-8,h-8);
-      ctx.fillStyle='#FF69B4';ctx.font='20px sans-serif';ctx.fillText('🎵',x+w/2-10,y+h/2+5);
-    }
-    // 屏幕光
-    ctx.fillStyle='rgba(255,255,255,0.05)';ctx.fillRect(x+4,y+4,w-8,h-8);
+    // ===== 内部（先画，门在后面）=====
+    // 内部背景
+    ctx.fillStyle='#E8F0F8';roundRect(x+4,y+4,w-8,h-8,3);ctx.fill();
+    // 内部隔层
+    ctx.fillStyle='#D0D8E0';
+    ctx.fillRect(x+6,y+h*0.35,w-12,3);
+    ctx.fillRect(x+6,y+h*0.65,w-12,3);
+    // 内部灯
+    ctx.fillStyle='rgba(255,255,200,0.15)';ctx.fillRect(x+4,y+4,w-8,h-8);
+    
+    // ===== 食物展示 =====
+    const foods=fridge.foods;
+    const cols=2;
+    const cellW=(w-16)/cols;
+    const cellH=(h-20)/Math.ceil(foods.length/cols);
+    
+    foods.forEach((food,i)=>{
+      const col=i%cols;
+      const row=Math.floor(i/cols);
+      const fx=x+8+col*cellW;
+      const fy=y+10+row*cellH;
+      const isHover=fridge.hoverFood&&fridge.hoverFood.id===food.id;
+      
+      // 食物背景
+      if(isHover){
+        ctx.fillStyle='rgba(255,200,100,0.3)';
+        roundRect(fx,fy,cellW-4,cellH-4,4);ctx.fill();
+      }
+      
+      // 食物图标
+      ctx.font='18px sans-serif';
+      ctx.fillText(food.icon,fx+cellW/2-10,fy+cellH/2+5);
+      
+      // 食物名称
+      ctx.font='7px sans-serif';ctx.fillStyle='rgba(0,0,0,0.5)';
+      ctx.textAlign='center';
+      ctx.fillText(food.name,fx+cellW/2,fy+cellH-4);
+      ctx.textAlign='left';
+    });
+    
+    // ===== 门（打开状态，向左偏移）=====
+    const doorG=ctx.createLinearGradient(x-15,y,x+w-15,y);
+    doorG.addColorStop(0,'#A8D8C8');doorG.addColorStop(0.5,'#B8E8D8');doorG.addColorStop(1,'#90C8B5');
+    ctx.fillStyle=doorG;
+    ctx.save();
+    ctx.transform(0.3,0,0,1,x-15,y); // 透视变形模拟开门
+    roundRect(0,0,w,h,4);ctx.fill();
+    ctx.restore();
+    
+    // 门把手
+    ctx.fillStyle='#707070';
+    roundRect(x-8,y+h*.3,5,18,2);ctx.fill();
+    
+    // 门上物品（磁铁贴等）
+    ctx.font='10px sans-serif';ctx.fillText('📝',x-5,y+30);
+    
   }else{
-    ctx.fillStyle='#111';roundRect(x+4,y+4,w-8,h-8,2);ctx.fill();
-    // 关屏倒影
-    ctx.fillStyle='rgba(255,255,255,0.03)';ctx.fillRect(x+4,y+4,w-8,h/2-4);
-  }
-  // 开关灯
-  ctx.fillStyle=F.tv.on?'#4CAF50':'#333';
-  ctx.beginPath();ctx.arc(x+w/2,y+h+12,3,0,Math.PI*2);ctx.fill();
-}
-
-// ----- 沙发 -----
-function drawSofa(x,y,w,h){
-  const g=ctx.createLinearGradient(x,y,x,y+h);
-  g.addColorStop(0,'#E88B5A');g.addColorStop(1,'#D07040');
-  ctx.fillStyle=g;roundRect(x,y,w,h,8);ctx.fill();
-  // 靠背
-  ctx.fillStyle='#D07040';roundRect(x,y-10,w,15,6);ctx.fill();
-  // 坐垫纹理
-  ctx.strokeStyle='rgba(0,0,0,0.1)';ctx.lineWidth=1;
-  ctx.beginPath();ctx.moveTo(x+w/3,y+5);ctx.lineTo(x+w/3,y+h-5);ctx.stroke();
-  ctx.beginPath();ctx.moveTo(x+w*2/3,y+5);ctx.lineTo(x+w*2/3,y+h-5);ctx.stroke();
-  // 靠枕
-  ctx.fillStyle='#F0A070';roundRect(x+5,y+5,20,25,4);ctx.fill();
-  ctx.fillStyle='#E89060';roundRect(x+w-25,y+5,20,25,4);ctx.fill();
-  // 扶手
-  ctx.fillStyle='#C06030';roundRect(x-8,y+5,12,h-5,4);ctx.fill();
-  ctx.fillStyle='#C06030';roundRect(x+w-4,y+5,12,h-5,4);ctx.fill();
-}
-
-// ----- 书架 -----
-function drawShelf(x,y,w,h){
-  ctx.fillStyle='#8B6914';ctx.fillRect(x,y,w,h);
-  // 搁板
-  ctx.fillStyle='#A07828';
-  for(let i=0;i<4;i++){ctx.fillRect(x+2,y+h/4*i,w-4,3)}
-  // 书
-  const colors=['#FF6B6B','#4ECDC4','#FFD700','#6C5CE7','#FF69B4'];
-  for(let i=0;i<4;i++){
-    const sy=y+h/4*i+5;
-    for(let j=0;j<3;j++){
-      ctx.fillStyle=colors[(i*3+j)%colors.length];
-      ctx.fillRect(x+5+j*12,sy,10,h/4-8);
-    }
+    // ===== 关门状态 =====
+    const g=ctx.createLinearGradient(x,y,x+w,y);
+    g.addColorStop(0,'#A8D8C8');g.addColorStop(0.5,'#B8E8D8');g.addColorStop(1,'#90C8B5');
+    ctx.fillStyle=g;roundRect(x,y,w,h,4);ctx.fill();
+    
+    // 门缝线
+    ctx.strokeStyle='#80B8A5';ctx.lineWidth=1;
+    ctx.beginPath();ctx.moveTo(x+5,y+h*.45);ctx.lineTo(x+w-5,y+h*.45);ctx.stroke();
+    
+    // 把手
+    ctx.fillStyle='#707070';
+    roundRect(x+w-12,y+h*.2,6,20,3);ctx.fill();
+    roundRect(x+w-12,y+h*.55,6,16,3);ctx.fill();
+    
+    // 高光
+    ctx.fillStyle='rgba(255,255,255,0.12)';ctx.fillRect(x+4,y+4,8,h*.4);
+    
+    // 品牌标志
+    ctx.font='8px sans-serif';ctx.fillStyle='rgba(0,0,0,0.15)';ctx.textAlign='center';
+    ctx.fillText('COOL',x+w/2,y+h*.15);ctx.textAlign='left';
   }
 }
 
-// ----- 绿植 -----
-function drawPlantDecor(x,y,w,h){
-  // 花盆
-  ctx.fillStyle='#C89070';ctx.beginPath();ctx.moveTo(x,y+h);ctx.lineTo(x+w,y+h);ctx.lineTo(x+w-5,y+h-15);ctx.lineTo(x+5,y+h-15);ctx.fill();
-  ctx.fillStyle='#D0A080';ctx.fillRect(x+3,y+h-18,w-6,5);
-  // 叶子
-  const leafColors=['#4CAF50','#66BB6A','#81C784'];
-  for(let i=0;i<5;i++){
-    ctx.fillStyle=leafColors[i%3];
-    ctx.save();ctx.translate(x+w/2,y+h-20);ctx.rotate((i-2)*.3+Math.sin(Date.now()/500+i)*.05);
-    ctx.beginPath();ctx.ellipse(0,-15-i*3,4,12,0,0,Math.PI*2);ctx.fill();ctx.restore();
-  }
-}
-
-// ----- 床 -----
-function drawBed(x,y,w,h){
-  // 床架
-  ctx.fillStyle='#8B6914';ctx.fillRect(x,y+h-5,w,8);
-  ctx.fillStyle='#A07828';ctx.fillRect(x,y-15,w*.3,h+10);
-  // 床垫
-  const g=ctx.createLinearGradient(x,y,x,y+h);
-  g.addColorStop(0,'#E8E0F0');g.addColorStop(1,'#D8D0E0');
-  ctx.fillStyle=g;roundRect(x+w*.1,y,w*.9,h,4);ctx.fill();
-  // 枕头
-  ctx.fillStyle='#F0E8F8';roundRect(x+w*.15,y+5,w*.25,h*.4,6);ctx.fill();
-  // 被子
-  ctx.fillStyle='#B8A0D0';roundRect(x+w*.15,y+h*.3,w*.75,h*.6,4);ctx.fill();
-  ctx.fillStyle='#C8B0E0';roundRect(x+w*.2,y+h*.35,w*.65,h*.4,3);ctx.fill();
-  // 床头柜
-  ctx.fillStyle='#8B6914';ctx.fillRect(x-15,y+h*.3,15,h*.3);
-}
-
-// ----- 衣柜 -----
-function drawWardrobe(x,y,w,h){
-  ctx.fillStyle='#A07828';roundRect(x,y,w,h,3);ctx.fill();
-  // 门缝
-  ctx.strokeStyle='#8B6914';ctx.lineWidth=1.5;
-  ctx.beginPath();ctx.moveTo(x+w/2,y+5);ctx.lineTo(x+w/2,y+h-5);ctx.stroke();
-  // 把手
-  ctx.fillStyle='#B8860B';
-  ctx.beginPath();ctx.arc(x+w/2-8,y+h/2,3,0,Math.PI*2);ctx.fill();
-  ctx.beginPath();ctx.arc(x+w/2+8,y+h/2,3,0,Math.PI*2);ctx.fill();
-  // 高光
-  ctx.fillStyle='rgba(255,255,255,0.08)';ctx.fillRect(x+3,y+3,w/2-4,h-6);
-}
-
-// ----- 书桌 -----
-function drawDesk(x,y,w,h){
-  ctx.fillStyle='#8B6914';ctx.fillRect(x+5,y+h,4,25);ctx.fillRect(x+w-9,y+h,4,25);
-  const g=ctx.createLinearGradient(x,y,x,y+h);
-  g.addColorStop(0,'#D4A574');g.addColorStop(1,'#C89464');
-  ctx.fillStyle=g;roundRect(x,y,w,h,3);ctx.fill();
-  // 书
-  ctx.fillStyle='#FF6B6B';ctx.fillRect(x+5,y+5,15,10);
-  ctx.fillStyle='#4ECDC4';ctx.fillRect(x+22,y+5,12,10);
-  // 笔筒
-  ctx.fillStyle='#888';ctx.fillRect(x+w-20,y+5,12,15);
-  ctx.fillStyle='#333';ctx.fillRect(x+w-18,y,2,12);
-  ctx.fillStyle='#FF6B6B';ctx.fillRect(x+w-14,y-2,2,14);
-}
-
-// ----- 台灯 -----
-function drawLamp(x,y,w,h){
-  // 底座
-  ctx.fillStyle='#888';ctx.fillRect(x+w/2-10,y+h-5,20,5);
-  // 灯杆
-  ctx.fillStyle='#777';ctx.fillRect(x+w/2-2,y+10,4,h-15);
-  // 灯罩
-  ctx.fillStyle='#FFD700';ctx.beginPath();ctx.moveTo(x,y+10);ctx.lineTo(x+w,y+10);ctx.lineTo(x+w-5,y);ctx.lineTo(x+5,y);ctx.fill();
-  // 灯光
-  if(F.lamp){
-    ctx.fillStyle='rgba(255,220,100,0.1)';
-    ctx.beginPath();ctx.moveTo(x,y+10);ctx.lineTo(x-20,y+h+20);ctx.lineTo(x+w+20,y+h+20);ctx.lineTo(x+w,y+10);ctx.fill();
-  }
-}
-
-// ===== 宠物绘制 =====
+// ============================================================
+// 宠物绘制 - 拿着食物吃
+// ============================================================
 function drawPet(){
   const{x,y,state:st}=pet;
   pet.bob+=.08;
@@ -448,6 +215,7 @@ function drawPet(){
   if(st==='idle')bob=Math.sin(pet.bob)*3;
   else if(st==='walk')bob=Math.abs(Math.sin(pet.bob*2))*5;
   else if(st==='happy')bob=Math.sin(pet.bob*1.5)*6;
+  else if(st==='eat')bob=Math.sin(pet.bob*3)*2; // 吃东西时抖动
   const py=y+bob;
   
   // 阴影
@@ -473,6 +241,11 @@ function drawPet(){
     ctx.strokeStyle='#333';ctx.lineWidth=2;
     ctx.beginPath();ctx.arc(x-7,py-3,4,0,Math.PI);ctx.stroke();
     ctx.beginPath();ctx.arc(x+7,py-3,4,0,Math.PI);ctx.stroke();
+  }else if(st==='eat'&&pet.eatBites%3===0){
+    // 吃东西时开心眯眼
+    ctx.strokeStyle='#333';ctx.lineWidth=2;
+    ctx.beginPath();ctx.arc(x-8,py-4,3.5,.2,Math.PI-.2);ctx.stroke();
+    ctx.beginPath();ctx.arc(x+8,py-4,3.5,.2,Math.PI-.2);ctx.stroke();
   }else{
     const bl=pet.blink>0?.1:1;
     ctx.fillStyle='#333';
@@ -488,20 +261,62 @@ function drawPet(){
   ctx.beginPath();ctx.ellipse(x-18,py+2,5,3,0,0,Math.PI*2);ctx.fill();
   ctx.beginPath();ctx.ellipse(x+18,py+2,5,3,0,0,Math.PI*2);ctx.fill();
   
-  // 嘴
-  if(st==='eat'){ctx.fillStyle='#C06030';ctx.beginPath();ctx.ellipse(x,py+6,4,3,0,0,Math.PI*2);ctx.fill()}
-  else if(st==='happy'){ctx.strokeStyle='#B07030';ctx.lineWidth=2;ctx.beginPath();ctx.arc(x,py+3,5,.1,Math.PI-.1);ctx.stroke()}
-  else{ctx.strokeStyle='#B07030';ctx.lineWidth=1.5;ctx.beginPath();ctx.arc(x,py+4,3,.2,Math.PI-.2);ctx.stroke()}
+  // 嘴巴 - 吃东西动画
+  if(st==='eat'){
+    const mouthOpen=Math.abs(Math.sin(pet.eatTimer*.3))*4;
+    ctx.fillStyle='#C06030';
+    ctx.beginPath();ctx.ellipse(x,py+6,4+mouthOpen*.5,3+mouthOpen,0,0,Math.PI*2);ctx.fill();
+    // 咀嚼时的碎屑
+    if(pet.eatBites>0&&pet.eatBites%2===0){
+      ctx.fillStyle='rgba(200,150,50,0.5)';
+      ctx.beginPath();ctx.arc(x-10,py+12+Math.sin(pet.eatTimer*.5)*3,2,0,Math.PI*2);ctx.fill();
+      ctx.beginPath();ctx.arc(x+12,py+10+Math.cos(pet.eatTimer*.4)*3,1.5,0,Math.PI*2);ctx.fill();
+    }
+  }else if(st==='happy'){
+    ctx.strokeStyle='#B07030';ctx.lineWidth=2;
+    ctx.beginPath();ctx.arc(x,py+3,5,.1,Math.PI-.1);ctx.stroke();
+  }else{
+    ctx.strokeStyle='#B07030';ctx.lineWidth=1.5;
+    ctx.beginPath();ctx.arc(x,py+4,3,.2,Math.PI-.2);ctx.stroke();
+  }
   
   // 尾巴
   const tw=Math.sin(Date.now()/300)*.3;
   ctx.strokeStyle='#F0A050';ctx.lineWidth=4;ctx.lineCap='round';
   ctx.beginPath();ctx.moveTo(x-22,py+8);ctx.quadraticCurveTo(x-30,py-5+Math.sin(tw)*10,x-26,py-18+Math.sin(tw)*7);ctx.stroke();
   
-  // 小手
-  ctx.fillStyle='#F0A050';
-  ctx.beginPath();ctx.ellipse(x-18,py+10,5,4,-.3,0,Math.PI*2);ctx.fill();
-  ctx.beginPath();ctx.ellipse(x+18,py+10,5,4,.3,0,Math.PI*2);ctx.fill();
+  // ===== 小手拿食物 =====
+  if(pet.holding){
+    const food=pet.holding;
+    // 左手举起食物
+    const handX=x-20;
+    const handY=py-5;
+    
+    // 手臂
+    ctx.fillStyle='#F0A050';
+    ctx.beginPath();ctx.ellipse(handX,handY,6,5,-.5,0,Math.PI*2);ctx.fill();
+    
+    // 食物
+    ctx.font='16px sans-serif';
+    const foodBob=st==='eat'?Math.sin(pet.eatTimer*.5)*3:0;
+    ctx.fillText(food.icon,handX-8,handY-5+foodBob);
+    
+    // 吃的动作 - 食物靠近嘴巴
+    if(st==='eat'){
+      const eatPhase=Math.sin(pet.eatTimer*.3);
+      const foodToMouth=eatPhase>0.5;
+      if(foodToMouth){
+        // 食物移到嘴边
+        ctx.font='12px sans-serif';
+        ctx.fillText(food.icon,x-5,py+2);
+      }
+    }
+  }else{
+    // 普通小手
+    ctx.fillStyle='#F0A050';
+    ctx.beginPath();ctx.ellipse(x-18,py+10,5,4,-.3,0,Math.PI*2);ctx.fill();
+    ctx.beginPath();ctx.ellipse(x+18,py+10,5,4,.3,0,Math.PI*2);ctx.fill();
+  }
   
   // 表情
   if(pet.emoT>0){pet.emoT--;ctx.globalAlpha=Math.min(1,pet.emoT/15);ctx.font='16px sans-serif';ctx.fillText(pet.emo,x+20,py-25);ctx.globalAlpha=1}
@@ -514,33 +329,181 @@ function drawPet(){
   }
 }
 
-// ===== 状态条 =====
+// ============================================================
+// 其他家具
+// ============================================================
+function drawFurniture(f){
+  const isHover=hoverItem&&hoverItem.id===f.id&&!fridge.open;
+  ctx.save();
+  if(isHover){ctx.shadowColor='rgba(255,200,100,0.4)';ctx.shadowBlur=12}
+  
+  switch(f.id){
+    case'fridge':drawFridge(f.x,f.y,f.w,f.h);break;
+    case'stove':drawStove(f.x,f.y,f.w,f.h);break;
+    case'sink':drawSink(f.x,f.y,f.w,f.h);break;
+    case'table':drawTable(f.x,f.y,f.w,f.h);break;
+    case'tv':drawTV(f.x,f.y,f.w,f.h);break;
+    case'sofa':drawSofa(f.x,f.y,f.w,f.h);break;
+    case'shelf':drawShelf(f.x,f.y,f.w,f.h);break;
+    case'plant':drawPlantDecor(f.x,f.y,f.w,f.h);break;
+    case'bed':drawBed(f.x,f.y,f.w,f.h);break;
+    case'wardrobe':drawWardrobe(f.x,f.y,f.w,f.h);break;
+    case'desk':drawDesk(f.x,f.y,f.w,f.h);break;
+    case'lamp':drawLampDecor(f.x,f.y,f.w,f.h);break;
+    default:ctx.fillStyle='#888';ctx.fillRect(f.x,f.y,f.w,f.h);
+  }
+  ctx.restore();
+  
+  // 悬停标签
+  if(isHover){
+    ctx.fillStyle='rgba(0,0,0,0.7)';
+    const tw=ctx.measureText(f.icon+' '+f.label).width;
+    roundRect(f.x+f.w/2-tw/2-8,f.y-22,tw+16,18,6);ctx.fill();
+    ctx.font='10px sans-serif';ctx.fillStyle='#fff';ctx.textAlign='center';
+    ctx.fillText(f.icon+' '+f.label,f.x+f.w/2,f.y-9);
+    ctx.textAlign='left';
+  }
+}
+
+function drawStove(x,y,w,h){
+  ctx.fillStyle='#F5F0E8';roundRect(x,y,w,h,3);ctx.fill();
+  ctx.fillStyle='#E8E0D5';ctx.fillRect(x,y,w,6);
+  ctx.fillStyle='#555';
+  ctx.beginPath();ctx.arc(x+20,y+25,10,0,Math.PI*2);ctx.fill();
+  ctx.beginPath();ctx.arc(x+50,y+25,10,0,Math.PI*2);ctx.fill();
+  if(F.stove.on){
+    ctx.fillStyle='rgba(255,100,0,0.6)';
+    ctx.beginPath();ctx.arc(x+20,y+25,8+Math.sin(Date.now()/100)*2,0,Math.PI*2);ctx.fill();
+    ctx.fillStyle='rgba(255,200,0,0.4)';
+    ctx.beginPath();ctx.arc(x+50,y+25,7+Math.cos(Date.now()/120)*2,0,Math.PI*2);ctx.fill();
+  }
+  ctx.fillStyle='#444';roundRect(x+5,y+45,w-10,h-50,2);ctx.fill();
+  for(let i=0;i<3;i++){ctx.fillStyle='#888';ctx.beginPath();ctx.arc(x+15+i*18,y+h-8,4,0,Math.PI*2);ctx.fill()}
+  if(F.stove.cookT>0){ctx.fillStyle='rgba(255,140,0,0.8)';roundRect(x+10,y-10,(w-20)*F.stove.cookT/100,6,3);ctx.fill()}
+  if(F.stove.foodReady){ctx.font='16px sans-serif';ctx.fillText('🍕',x+w/2-8,y+30)}
+}
+
+function drawSink(x,y,w,h){
+  ctx.fillStyle='#E8E0D5';roundRect(x,y,w,h,3);ctx.fill();
+  ctx.fillStyle='#C0C0C0';roundRect(x+8,y+10,w-16,h-20,4);ctx.fill();
+  ctx.fillStyle='#A0A0A0';roundRect(x+10,y+12,w-20,h-24,3);ctx.fill();
+  ctx.fillStyle='#B0B0B0';ctx.fillRect(x+w/2-2,y-5,4,15);
+  if(F.sink.running){ctx.fillStyle='rgba(100,180,255,0.4)';ctx.beginPath();ctx.moveTo(x+w/2,y+8);ctx.lineTo(x+w/2-5,y+25);ctx.lineTo(x+w/2+5,y+25);ctx.fill()}
+}
+
+function drawTable(x,y,w,h){
+  ctx.fillStyle='#8B6914';ctx.fillRect(x+5,y+h-3,4,30);ctx.fillRect(x+w-9,y+h-3,4,30);
+  ctx.fillStyle='#D4A574';roundRect(x,y,w,h,4);ctx.fill();
+  ctx.font='12px sans-serif';ctx.fillText('☕',x+10,y+15);ctx.fillText('🍞',x+35,y+15);
+}
+
+function drawTV(x,y,w,h){
+  ctx.fillStyle='#6B4E3D';ctx.fillRect(x,y+h,w,20);
+  ctx.fillStyle='#222';roundRect(x,y,w,h,4);ctx.fill();
+  if(F.tv.on){
+    ctx.fillStyle='#FF6B6B';ctx.fillRect(x+4,y+4,w-8,h-8);
+    ctx.fillStyle='#FFD700';ctx.font='20px sans-serif';ctx.fillText('🎬',x+w/2-10,y+h/2+5);
+  }else{ctx.fillStyle='#111';roundRect(x+4,y+4,w-8,h-8,2);ctx.fill()}
+  ctx.fillStyle=F.tv.on?'#4CAF50':'#333';ctx.beginPath();ctx.arc(x+w/2,y+h+12,3,0,Math.PI*2);ctx.fill();
+}
+
+function drawSofa(x,y,w,h){
+  ctx.fillStyle='#E88B5A';roundRect(x,y,w,h,8);ctx.fill();
+  ctx.fillStyle='#D07040';roundRect(x,y-10,w,15,6);ctx.fill();
+  ctx.fillStyle='#F0A070';roundRect(x+5,y+5,20,25,4);ctx.fill();
+  ctx.fillStyle='#E89060';roundRect(x+w-25,y+5,20,25,4);ctx.fill();
+  ctx.fillStyle='#C06030';roundRect(x-8,y+5,12,h-5,4);ctx.fill();
+  ctx.fillStyle='#C06030';roundRect(x+w-4,y+5,12,h-5,4);ctx.fill();
+}
+
+function drawShelf(x,y,w,h){
+  ctx.fillStyle='#8B6914';ctx.fillRect(x,y,w,h);
+  ctx.fillStyle='#A07828';for(let i=0;i<4;i++){ctx.fillRect(x+2,y+h/4*i,w-4,3)}
+  const colors=['#FF6B6B','#4ECDC4','#FFD700','#6C5CE7','#FF69B4'];
+  for(let i=0;i<4;i++){const sy=y+h/4*i+5;for(let j=0;j<3;j++){ctx.fillStyle=colors[(i*3+j)%colors.length];ctx.fillRect(x+5+j*12,sy,10,h/4-8)}}
+}
+
+function drawPlantDecor(x,y,w,h){
+  ctx.fillStyle='#C89070';ctx.beginPath();ctx.moveTo(x,y+h);ctx.lineTo(x+w,y+h);ctx.lineTo(x+w-5,y+h-15);ctx.lineTo(x+5,y+h-15);ctx.fill();
+  for(let i=0;i<5;i++){ctx.fillStyle=['#4CAF50','#66BB6A','#81C784'][i%3];ctx.save();ctx.translate(x+w/2,y+h-20);ctx.rotate((i-2)*.3);ctx.beginPath();ctx.ellipse(0,-15-i*3,4,12,0,0,Math.PI*2);ctx.fill();ctx.restore()}
+}
+
+function drawBed(x,y,w,h){
+  ctx.fillStyle='#8B6914';ctx.fillRect(x,y+h-5,w,8);ctx.fillStyle='#A07828';ctx.fillRect(x,y-15,w*.3,h+10);
+  ctx.fillStyle='#E8E0F0';roundRect(x+w*.1,y,w*.9,h,4);ctx.fill();
+  ctx.fillStyle='#F0E8F8';roundRect(x+w*.15,y+5,w*.25,h*.4,6);ctx.fill();
+  ctx.fillStyle='#B8A0D0';roundRect(x+w*.15,y+h*.3,w*.75,h*.6,4);ctx.fill();
+}
+
+function drawWardrobe(x,y,w,h){
+  ctx.fillStyle='#A07828';roundRect(x,y,w,h,3);ctx.fill();
+  ctx.strokeStyle='#8B6914';ctx.lineWidth=1.5;ctx.beginPath();ctx.moveTo(x+w/2,y+5);ctx.lineTo(x+w/2,y+h-5);ctx.stroke();
+  ctx.fillStyle='#B8860B';ctx.beginPath();ctx.arc(x+w/2-8,y+h/2,3,0,Math.PI*2);ctx.fill();ctx.beginPath();ctx.arc(x+w/2+8,y+h/2,3,0,Math.PI*2);ctx.fill();
+}
+
+function drawDesk(x,y,w,h){
+  ctx.fillStyle='#8B6914';ctx.fillRect(x+5,y+h,4,25);ctx.fillRect(x+w-9,y+h,4,25);
+  ctx.fillStyle='#D4A574';roundRect(x,y,w,h,3);ctx.fill();
+  ctx.fillStyle='#FF6B6B';ctx.fillRect(x+5,y+5,15,10);ctx.fillStyle='#4ECDC4';ctx.fillRect(x+22,y+5,12,10);
+}
+
+function drawLampDecor(x,y,w,h){
+  ctx.fillStyle='#888';ctx.fillRect(x+w/2-10,y+h-5,20,5);ctx.fillStyle='#777';ctx.fillRect(x+w/2-2,y+10,4,h-15);
+  ctx.fillStyle='#FFD700';ctx.beginPath();ctx.moveTo(x,y+10);ctx.lineTo(x+w,y+10);ctx.lineTo(x+w-5,y);ctx.lineTo(x+5,y);ctx.fill();
+  if(F.lamp){ctx.fillStyle='rgba(255,220,100,0.1)';ctx.beginPath();ctx.moveTo(x,y+10);ctx.lineTo(x-20,y+h+20);ctx.lineTo(x+w+20,y+h+20);ctx.lineTo(x+w,y+10);ctx.fill()}
+}
+
+// ============================================================
+// 房间绘制
+// ============================================================
+function drawRoom(){
+  const room=S.room;
+  // 墙壁
+  const wallG=ctx.createLinearGradient(0,0,0,200);
+  if(room==='kitchen'){wallG.addColorStop(0,'#F5F0E8');wallG.addColorStop(1,'#EDE5D8')}
+  else if(room==='living'){wallG.addColorStop(0,'#E8E0D0');wallG.addColorStop(1,'#DDD5C5')}
+  else{wallG.addColorStop(0,'#E0D8E8');wallG.addColorStop(1,'#D5CDE0')}
+  ctx.fillStyle=wallG;ctx.fillRect(0,0,W,200);
+  // 地板
+  const floorG=ctx.createLinearGradient(0,200,0,H);
+  floorG.addColorStop(0,'#E8D8C0');floorG.addColorStop(1,'#D4C4A8');
+  ctx.fillStyle=floorG;ctx.fillRect(0,200,W,H-200);
+  ctx.strokeStyle='rgba(0,0,0,0.04)';ctx.lineWidth=1;
+  for(let x=0;x<W;x+=40){ctx.beginPath();ctx.moveTo(x,200);ctx.lineTo(x,H);ctx.stroke()}
+  for(let y=200;y<H;y+=40){ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(W,y);ctx.stroke()}
+  ctx.fillStyle='rgba(100,80,60,0.15)';ctx.fillRect(0,195,W,5);
+  // 窗户
+  drawWindow(140,30,80,80);
+  // 家具
+  FURNITURE[room].forEach(f=>drawFurniture(f));
+}
+
+function drawWindow(x,y,w,h){
+  ctx.fillStyle='#D0C8B8';roundRect(x-4,y-4,w+8,h+8,4);ctx.fill();
+  const skyG=ctx.createLinearGradient(x,y,x,y+h);skyG.addColorStop(0,'#87CEEB');skyG.addColorStop(1,'#B0E0E6');
+  ctx.fillStyle=skyG;roundRect(x,y,w,h,2);ctx.fill();
+  ctx.strokeStyle='#C0B8A8';ctx.lineWidth=2;
+  ctx.beginPath();ctx.moveTo(x+w/2,y);ctx.lineTo(x+w/2,y+h);ctx.stroke();
+  ctx.beginPath();ctx.moveTo(x,y+h/2);ctx.lineTo(x+w,y+h/2);ctx.stroke();
+  ctx.fillStyle='rgba(255,200,150,0.3)';ctx.fillRect(x-10,y-5,15,h+10);ctx.fillRect(x+w-5,y-5,15,h+10);
+}
+
+// ============================================================
+// UI
+// ============================================================
 function drawBars(){
   const bars=[{i:'🍖',v:S.hunger,c:'#FF6B6B'},{i:'💛',v:S.happy,c:'#FFD700'},{i:'⚡',v:S.energy,c:'#4ECDC4'},{i:'🧹',v:S.clean,c:'#80C8FF'}];
-  bars.forEach((b,i)=>{
-    const bx=8,by=8+i*14,bw=55,bh=5;
-    ctx.font='8px sans-serif';ctx.fillStyle='rgba(255,255,255,0.6)';ctx.fillText(b.i,bx,by+6);
-    ctx.fillStyle='rgba(255,255,255,0.1)';roundRect(bx+12,by,bw,bh,2);ctx.fill();
-    ctx.fillStyle=b.c;roundRect(bx+12,by,bw*b.v/100,bh,2);ctx.fill();
-    ctx.fillText(Math.round(b.v)+'%',bx+bw+16,by+6);
-  });
-  // 房间名
-  ctx.font='10px sans-serif';ctx.fillStyle='rgba(255,255,255,0.7)';ctx.textAlign='center';
-  ctx.fillText(ROOM_NAMES[S.room],W/2,H-10);
-  ctx.textAlign='left';
-  // 金币
+  bars.forEach((b,i)=>{const bx=8,by=8+i*14,bw=55,bh=5;ctx.font='8px sans-serif';ctx.fillStyle='rgba(255,255,255,0.6)';ctx.fillText(b.i,bx,by+6);ctx.fillStyle='rgba(255,255,255,0.1)';roundRect(bx+12,by,bw,bh,2);ctx.fill();ctx.fillStyle=b.c;roundRect(bx+12,by,bw*b.v/100,bh,2);ctx.fill();ctx.fillText(Math.round(b.v)+'%',bx+bw+16,by+6)});
+  ctx.font='10px sans-serif';ctx.fillStyle='rgba(255,255,255,0.7)';ctx.textAlign='center';ctx.fillText(ROOM_NAMES[S.room],W/2,H-10);ctx.textAlign='left';
   ctx.font='9px sans-serif';ctx.fillStyle='#FFD700';ctx.fillText('💰'+S.coins,W-50,14);
+  // 提示
+  if(fridge.open){ctx.font='9px sans-serif';ctx.fillStyle='rgba(255,255,255,0.5)';ctx.textAlign='center';ctx.fillText('点击食物取出 | 按C关闭冰箱',W/2,H-25);ctx.textAlign='left'}
 }
 
-// ===== 粒子 =====
 function drawParticles(){
-  particles.forEach(p=>{
-    ctx.globalAlpha=p.life;ctx.fillStyle=p.type==='heart'?'#FF6B8A':p.type==='star'?'#FFD700':p.type==='drop'?'#80C8FF':'#FFB347';
-    ctx.beginPath();ctx.arc(p.x,p.y,p.size*.3,0,Math.PI*2);ctx.fill();ctx.globalAlpha=1;
-  });
+  particles.forEach(p=>{ctx.globalAlpha=p.life;ctx.fillStyle=p.type==='heart'?'#FF6B8A':p.type==='star'?'#FFD700':p.type==='drop'?'#80C8FF':'#FFB347';ctx.beginPath();ctx.arc(p.x,p.y,p.size*.3,0,Math.PI*2);ctx.fill();ctx.globalAlpha=1});
 }
 
-// ===== 通知 =====
 function drawNotif(){
   if(notifT<=0)return;notifT--;
   ctx.globalAlpha=Math.min(1,notifT/15);ctx.fillStyle='rgba(0,0,0,0.7)';
@@ -548,106 +511,140 @@ function drawNotif(){
   ctx.font='11px sans-serif';ctx.fillStyle='#fff';ctx.textAlign='center';ctx.fillText(notif,W/2,95);ctx.textAlign='left';ctx.globalAlpha=1;
 }
 
-// ===== 交互 =====
+// ============================================================
+// 交互逻辑
+// ============================================================
 function getClickedItem(mx,my){
+  if(fridge.open)return null; // 冰箱打开时不点击其他家具
   const items=FURNITURE[S.room];
   for(const f of items){if(mx>=f.x&&mx<=f.x+f.w&&my>=f.y&&my<=f.y+f.h)return f}
   return null;
 }
 
+function getClickedFood(mx,my){
+  if(!fridge.open)return null;
+  const foods=fridge.foods;
+  const x=20,y=100,w=70,h=140;
+  const cols=2;
+  const cellW=(w-16)/cols;
+  const cellH=(h-20)/Math.ceil(foods.length/cols);
+  
+  for(let i=0;i<foods.length;i++){
+    const col=i%cols,row=Math.floor(i/cols);
+    const fx=x+8+col*cellW,fy=y+10+row*cellH;
+    if(mx>=fx&&mx<=fx+cellW-4&&my>=fy&&my<=fy+cellH-4)return foods[i];
+  }
+  return null;
+}
+
+function grabFood(food){
+  sfx('grab');
+  pet.holding=food;
+  pet.state='idle';
+  pet.emo=food.icon;pet.emoT=60;
+  showNotif(`拿了${food.icon}${food.name}！`);
+  
+  // 从冰箱移除
+  const idx=fridge.foods.indexOf(food);
+  if(idx>=0)fridge.foods.splice(idx,1);
+  
+  // 关冰箱
+  setTimeout(()=>{fridge.open=false;sfx('close')},500);
+}
+
+function eatFood(){
+  if(!pet.holding)return;
+  const food=pet.holding;
+  
+  pet.state='eat';
+  pet.eatTimer=0;
+  pet.eatBites=0;
+  sfx('eat');
+  
+  // 吃完计时
+  const eatInterval=setInterval(()=>{
+    pet.eatTimer++;
+    pet.eatBites++;
+    if(pet.eatBites%3===0)sfx('eat');
+    
+    if(pet.eatBites>=12){
+      clearInterval(eatInterval);
+      // 吃完效果
+      S.hunger=Math.min(100,S.hunger+food.hunger);
+      S.happy=Math.min(100,S.happy+food.happy);
+      S.coins+=2;
+      pet.holding=null;
+      pet.state='idle';
+      pet.emo='😋';pet.emoT=60;
+      emit(pet.x,pet.y-20,'food',5);
+      showNotif(`吃了${food.icon}${food.name}！+${food.hunger}饱食+${food.happy}心情`);
+      
+      // 冰箱补充食物（延迟）
+      setTimeout(()=>{
+        if(fridge.foods.length<8){
+          const newFoods=[
+            {id:'apple',name:'苹果',icon:'🍎',hunger:15,happy:5,color:'#FF4444'},
+            {id:'banana',name:'香蕉',icon:'🍌',hunger:12,happy:3,color:'#FFD700'},
+            {id:'cake',name:'蛋糕',icon:'🍰',hunger:10,happy:15,color:'#FFB6C1'},
+            {id:'milk',name:'牛奶',icon:'🥛',hunger:8,happy:5,color:'#FFFFFF'},
+          ];
+          fridge.foods.push(newFoods[Math.floor(Math.random()*newFoods.length)]);
+        }
+      },10000);
+    }
+  },200);
+}
+
 function interactItem(item){
   sfx('click');
-  // 宠物走过去
   pet.targetX=item.x+item.w/2;pet.targetY=item.y+item.h+20;
   
   setTimeout(()=>{
-    switch(item.action){
-      case'feed':
-        sfx('open');F.fridge.open=!F.fridge.open;
-        if(F.fridge.open){
-          S.hunger=Math.min(100,S.hunger+25);S.coins+=2;
-          pet.state='eat';emit(pet.x,pet.y-20,'food',4);
-          showNotif('🧊 从冰箱拿了好吃的！+25饱食');
-          pet.emo='😋';pet.emoT=60;
-          setTimeout(()=>{F.fridge.open=false;sfx('close')},3000);
-        }
+    switch(item.id){
+      case'fridge':
+        sfx('open');
+        fridge.open=!fridge.open;
+        if(fridge.open){showNotif('🧊 冰箱打开了！点击食物取出')}
         break;
-      case'cook':
-        if(!F.stove.on){
-          F.stove.on=true;F.stove.cookT=0;
-          showNotif('🍳 开始做饭了！');
-          sfx('cook');
-        }else{
-          showNotif('已经在做了~');
-        }
+      case'stove':
+        if(!F.stove.on){F.stove.on=true;F.stove.cookT=0;showNotif('🍳 开始做饭了！')}
+        else{showNotif('已经在做了~')}
         break;
-      case'wash':
+      case'sink':
         F.sink.running=!F.sink.running;
-        if(F.sink.running){
-          S.clean=Math.min(100,S.clean+30);S.coins+=1;
-          emit(pet.x,pet.y-15,'drop',6);
-          showNotif('🚿 洗干净了！+30清洁');
-        }
+        if(F.sink.running){S.clean=Math.min(100,S.clean+30);emit(pet.x,pet.y-15,'drop',6);showNotif('🚿 洗干净了！+30清洁')}
         break;
-      case'eat':
-        if(F.stove.foodReady){
-          S.hunger=Math.min(100,S.hunger+20);S.happy=Math.min(100,S.happy+10);
-          F.stove.foodReady=false;
-          pet.state='eat';emit(pet.x,pet.y-20,'food',3);
-          showNotif('🍽️ 好好吃！+20饱食+10心情');
-          pet.emo='😋';pet.emoT=60;
-        }else{
-          S.happy=Math.min(100,S.happy+5);
-          showNotif('☕ 在餐桌旁休息~');
-        }
+      case'table':
+        if(F.stove.foodReady){S.hunger=Math.min(100,S.hunger+20);S.happy=Math.min(100,S.happy+10);F.stove.foodReady=false;pet.state='eat';showNotif('🍽️ 好好吃！')}
+        else{S.happy=Math.min(100,S.happy+5);showNotif('☕ 在餐桌旁休息~')}
         break;
-      case'watch':
+      case'tv':
         F.tv.on=!F.tv.on;
-        if(F.tv.on){
-          S.happy=Math.min(100,S.happy+15);sfx('tv');
-          showNotif('📺 看电视~ +15心情');
-          pet.state='happy';setTimeout(()=>pet.state='idle',2000);
-        }else{
-          showNotif('📺 关电视了');
-        }
+        if(F.tv.on){S.happy=Math.min(100,S.happy+15);sfx('tv');showNotif('📺 看电视~ +15心情');pet.state='happy';setTimeout(()=>pet.state='idle',2000)}
+        else{showNotif('📺 关电视了')}
         break;
-      case'rest':
+      case'sofa':
         S.energy=Math.min(100,S.energy+20);S.happy=Math.min(100,S.happy+5);
-        pet.state='idle';
-        showNotif('🛋️ 在沙发上休息~ +20体力');
-        pet.emo='😌';pet.emoT=60;
+        showNotif('🛋️ 在沙发上休息~ +20体力');pet.emo='😌';pet.emoT=60;
         break;
-      case'read':
-        S.happy=Math.min(100,S.happy+10);
-        showNotif('📚 看了会儿书~ +10心情');
-        pet.emo='📖';pet.emoT=60;
+      case'shelf':
+        S.happy=Math.min(100,S.happy+10);showNotif('📚 看了会儿书~ +10心情');pet.emo='📖';pet.emoT=60;
         break;
-      case'water':
-        S.happy=Math.min(100,S.happy+8);
-        emit(item.x+item.w/2,item.y,'drop',4);
-        showNotif('🌿 给绿植浇水了~ +8心情');
+      case'plant':
+        S.happy=Math.min(100,S.happy+8);emit(item.x+item.w/2,item.y,'drop',4);showNotif('🌿 给绿植浇水了~');
         break;
-      case'sleep':
-        F.bed.sleeping=true;
-        S.energy=Math.min(100,S.energy+40);
-        pet.state='sleep';
-        showNotif('🛏️ 睡觉了... +40体力');
-        sfx('sleep');
+      case'bed':
+        F.bed.sleeping=true;S.energy=Math.min(100,S.energy+40);pet.state='sleep';sfx('sleep');showNotif('🛏️ 睡觉了...+40体力');
         setTimeout(()=>{F.bed.sleeping=false;pet.state='idle';showNotif('☀️ 睡醒了！')},5000);
         break;
-      case'dress':
-        S.happy=Math.min(100,S.happy+10);
-        showNotif('👔 换了件衣服~ +10心情');
-        pet.emo='✨';pet.emoT=60;
+      case'wardrobe':
+        S.happy=Math.min(100,S.happy+10);showNotif('👔 换了件衣服~ +10心情');pet.emo='✨';pet.emoT=60;
         break;
-      case'study':
-        S.happy=Math.min(100,S.happy+12);
-        showNotif('📖 学习了一会儿~ +12心情');
-        pet.emo='🧠';pet.emoT=60;
+      case'desk':
+        S.happy=Math.min(100,S.happy+12);showNotif('📖 学习了一会儿~ +12心情');pet.emo='🧠';pet.emoT=60;
         break;
-      case'light':
-        F.lamp=!F.lamp;
-        showNotif(F.lamp?'💡 开灯了':'💡 关灯了');
+      case'lamp':
+        F.lamp=!F.lamp;showNotif(F.lamp?'💡 开灯了':'💡 关灯了');
         break;
     }
   },500);
@@ -657,19 +654,14 @@ function interactItem(item){
 function onBtn(btn){
   sfx('click');
   if(btn==='B'){
-    // 确认 - 和最近的家具互动
+    if(pet.holding){eatFood();return}
     const items=FURNITURE[S.room];
     let nearest=null,minD=Infinity;
-    items.forEach(f=>{
-      const dx=pet.x-(f.x+f.w/2),dy=pet.y-(f.y+f.h);
-      const d=dx*dx+dy*dy;
-      if(d<minD){minD=d;nearest=f}
-    });
+    items.forEach(f=>{const dx=pet.x-(f.x+f.w/2),dy=pet.y-(f.y+f.h);const d=dx*dx+dy*dy;if(d<minD){minD=d;nearest=f}});
     if(nearest)interactItem(nearest);
   }else if(btn==='C'){
-    // 切换房间
-    const idx=ROOMS.indexOf(S.room);
-    S.room=ROOMS[(idx+1)%ROOMS.length];
+    if(fridge.open){fridge.open=false;sfx('close');showNotif('🧊 冰箱关上了');return}
+    const idx=ROOMS.indexOf(S.room);S.room=ROOMS[(idx+1)%ROOMS.length];
     pet.x=180;pet.y=260;pet.targetX=180;pet.targetY=260;
     showNotif(ROOM_NAMES[S.room]);
   }
@@ -685,63 +677,67 @@ function onNav(dir){
   }
 }
 
-// 鼠标悬停
+// 鼠标事件
 canvas.addEventListener('mousemove',e=>{
   const r=canvas.getBoundingClientRect();
   const mx=(e.clientX-r.left)*(W/r.width),my=(e.clientY-r.top)*(H/r.height);
-  hoverItem=getClickedItem(mx,my);
-  canvas.style.cursor=hoverItem?'pointer':'default';
+  if(fridge.open){
+    fridge.hoverFood=getClickedFood(mx,my);
+    canvas.style.cursor=fridge.hoverFood?'pointer':'default';
+    hoverItem=null;
+  }else{
+    hoverItem=getClickedItem(mx,my);
+    canvas.style.cursor=hoverItem?'pointer':'default';
+    fridge.hoverFood=null;
+  }
 });
 
 canvas.addEventListener('click',e=>{
   const r=canvas.getBoundingClientRect();
   const mx=(e.clientX-r.left)*(W/r.width),my=(e.clientY-r.top)*(H/r.height);
+  
+  // 冰箱打开时点击食物
+  if(fridge.open){
+    const food=getClickedFood(mx,my);
+    if(food){grabFood(food);return}
+    // 点击冰箱外部关闭
+    if(mx<20||mx>90||my<100||my>240){fridge.open=false;sfx('close');showNotif('🧊 冰箱关上了')}
+    return;
+  }
+  
+  // 点击家具
   const item=getClickedItem(mx,my);
-  if(item)interactItem(item);
-  else{pet.targetX=mx;pet.targetY=my}
+  if(item){interactItem(item);return}
+  
+  // 点击地面移动
+  pet.targetX=mx;pet.targetY=my;
+  
+  // 如果拿着食物，点地面就吃
+  if(pet.holding)eatFood();
 });
-
-// ===== 圆角矩形 =====
-function roundRect(x,y,w,h,r){ctx.beginPath();ctx.moveTo(x+r,y);ctx.lineTo(x+w-r,y);ctx.quadraticCurveTo(x+w,y,x+w,y+r);ctx.lineTo(x+w,y+h-r);ctx.quadraticCurveTo(x+w,y+h,x+w-r,y+h);ctx.lineTo(x+r,y+h);ctx.quadraticCurveTo(x,y+h,x,y+h-r);ctx.lineTo(x,y+r);ctx.quadraticCurveTo(x,y,x+r,y);ctx.closePath()}
 
 // ===== 游戏更新 =====
 function update(){
-  // 宠物移动
   const dx=pet.targetX-pet.x,dy=pet.targetY-pet.y;
   const dist=Math.sqrt(dx*dx+dy*dy);
-  if(dist>3){
-    pet.x+=dx/dist*2;pet.y+=dy/dist*2;
-    pet.state='walk';pet.dir=dx>0?1:-1;
-  }else if(pet.state==='walk'){pet.state='idle'}
+  if(dist>3){pet.x+=dx/dist*2;pet.y+=dy/dist*2;pet.state=pet.holding?'walk':'walk';pet.dir=dx>0?1:-1}
+  else if(pet.state==='walk'&&!pet.holding)pet.state='idle';
   
-  // 属性衰减
-  S.hunger=Math.max(0,S.hunger-.03);
-  S.happy=Math.max(0,S.happy-.02);
-  S.energy=Math.max(0,S.energy-.015);
-  S.clean=Math.max(0,S.clean-.01);
+  S.hunger=Math.max(0,S.hunger-.03);S.happy=Math.max(0,S.happy-.02);
+  S.energy=Math.max(0,S.energy-.015);S.clean=Math.max(0,S.clean-.01);
   S.age+=1/60;
   
-  // 灶台烹饪
-  if(F.stove.on){
-    F.stove.cookT+=.3;
-    if(F.stove.cookT>=100){F.stove.on=false;F.stove.foodReady=true;showNotif('🍕 做好了！')};
-  }
+  if(F.stove.on){F.stove.cookT+=.3;if(F.stove.cookT>=100){F.stove.on=false;F.stove.foodReady=true;showNotif('🍕 做好了！')}}
   
-  // 眨眼
-  pet.blink--;
-  if(pet.blink<=0){pet.blink=pet.isBlinking?(120+Math.random()*180):8;pet.isBlinking=!pet.isBlinking}
+  pet.blink--;if(pet.blink<=0){pet.blink=pet.isBlinking?(120+Math.random()*180):8;pet.isBlinking=!pet.isBlinking}
   
-  // 粒子
   for(let i=particles.length-1;i>=0;i--){const p=particles[i];p.x+=p.vx;p.y+=p.vy;p.vy+=.02;p.life-=p.decay;if(p.life<=0)particles.splice(i,1)}
 }
 
 // ===== 主循环 =====
 function frame(){
   ctx.clearRect(0,0,W,H);
-  
-  // 背景
-  const bg=ctx.createLinearGradient(0,0,0,H);
-  bg.addColorStop(0,'#0a0a2a');bg.addColorStop(1,'#0a0a1a');
+  const bg=ctx.createLinearGradient(0,0,0,H);bg.addColorStop(0,'#0a0a2a');bg.addColorStop(1,'#0a0a1a');
   ctx.fillStyle=bg;ctx.fillRect(0,0,W,H);
   
   drawRoom();
