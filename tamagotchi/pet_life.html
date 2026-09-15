@@ -1,0 +1,481 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>🥚 拓麻歌子 - 彩色电子宠物</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:linear-gradient(135deg,#1a1a2e,#16213e,#0f3460);display:flex;justify-content:center;align-items:center;min-height:100vh;font-family:'Segoe UI','PingFang SC',sans-serif;overflow:hidden}
+.game{position:relative;width:400px;height:700px;background:linear-gradient(180deg,#2d1b4e,#1a1a2e);border-radius:30px;border:3px solid rgba(255,255,255,0.1);box-shadow:0 20px 60px rgba(0,0,0,0.5),inset 0 1px 0 rgba(255,255,255,0.1);overflow:hidden}
+.screen{position:absolute;top:50px;left:20px;right:20px;height:380px;background:linear-gradient(180deg,#0a0a1a,#111128);border-radius:20px;border:2px solid rgba(255,255,255,0.08);overflow:hidden}
+canvas{display:block;width:100%;height:100%}
+.btns{position:absolute;bottom:30px;left:20px;right:20px;display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
+.btn{height:50px;border:none;border-radius:12px;font-size:20px;cursor:pointer;transition:all 0.15s;box-shadow:0 4px 12px rgba(0,0,0,0.3)}
+.btn:active{transform:scale(0.92);box-shadow:0 2px 6px rgba(0,0,0,0.3)}
+.btn-feed{background:linear-gradient(135deg,#FF6B6B,#ee5a24);color:#fff}
+.btn-play{background:linear-gradient(135deg,#FFD700,#FF8C00);color:#fff}
+.btn-sleep{background:linear-gradient(135deg,#6C5CE7,#a29bfe);color:#fff}
+.btn-clean{background:linear-gradient(135deg,#00b894,#00cec9);color:#fff}
+.status{position:absolute;top:10px;left:10px;right:10px;display:flex;justify-content:space-between;align-items:center;z-index:10}
+.status-item{font-size:11px;color:rgba(255,255,255,0.7);background:rgba(0,0,0,0.3);padding:3px 8px;border-radius:8px}
+.title{text-align:center;padding:15px;color:#fff;font-size:16px;font-weight:bold;letter-spacing:2px;text-shadow:0 0 20px rgba(255,200,100,0.3)}
+</style>
+</head>
+<body>
+<div class="game">
+  <div class="title">🥚 拓麻歌子 ✨</div>
+  <div class="screen">
+    <canvas id="c"></canvas>
+  </div>
+  <div class="btns">
+    <button class="btn btn-feed" onclick="doAction('feed')">🍖</button>
+    <button class="btn btn-play" onclick="doAction('play')">🎾</button>
+    <button class="btn btn-sleep" onclick="doAction('sleep')">💤</button>
+    <button class="btn btn-clean" onclick="doAction('clean')">🫧</button>
+  </div>
+</div>
+<script>
+const canvas=document.getElementById('c');
+const ctx=canvas.getContext('2d');
+const W=360,H=380;
+canvas.width=W*2;canvas.height=H*2;
+canvas.style.width=W+'px';canvas.style.height=H+'px';
+ctx.scale(2,2);
+
+// ===== 游戏状态 =====
+const S={hunger:80,happy:75,energy:70,clean:90,age:0,level:1,coins:50,tick:0};
+const pet={x:W/2,y:H/2+30,state:'idle',frame:0,dir:1,emotion:'',emoTick:0,blink:0,bob:0,evolve:'egg',evolveTimer:0};
+
+// ===== 粒子系统 =====
+const particles=[];
+function emit(x,y,type,n=5){
+  for(let i=0;i<n;i++){
+    particles.push({x,y,vx:(Math.random()-.5)*4,vy:-Math.random()*4-2,life:1,decay:.015+Math.random()*.01,size:8+Math.random()*8,type,rot:Math.random()*6.28});
+  }
+}
+
+// ===== 绘制宠物 =====
+function drawPet(){
+  const{x,y,evolve,state:st,frame:fr}=pet;
+  pet.bob+=.06;
+  const bob=Math.sin(pet.bob)*4;
+  const py=y+bob;
+  
+  // 阴影
+  ctx.fillStyle='rgba(0,0,0,0.15)';
+  ctx.beginPath();ctx.ellipse(x,y+45,30,8,0,0,Math.PI*2);ctx.fill();
+  
+  if(evolve==='egg'){
+    // 蛋 - 渐变圆润
+    const g=ctx.createRadialGradient(x-5,py-10,5,x,py,35);
+    g.addColorStop(0,'#FFE4C4');g.addColorStop(0.7,'#F5DEB3');g.addColorStop(1,'#DEB887');
+    ctx.fillStyle=g;
+    ctx.beginPath();ctx.ellipse(x,py,28,35,0,0,Math.PI*2);ctx.fill();
+    // 蛋壳纹理
+    ctx.strokeStyle='rgba(139,90,43,0.3)';ctx.lineWidth=1;
+    ctx.beginPath();ctx.ellipse(x,py-5,20,15,0.2,0,Math.PI);ctx.stroke();
+    ctx.beginPath();ctx.ellipse(x+3,py+8,18,12,-0.2,0,Math.PI);ctx.stroke();
+    // 裂缝（孵化时）
+    if(pet.evolveTimer>0){
+      ctx.strokeStyle='rgba(0,0,0,0.5)';ctx.lineWidth=2;
+      const crack=pet.evolveTimer/100;
+      ctx.beginPath();ctx.moveTo(x-5,py-20*crack);ctx.lineTo(x+3,py-10*crack);ctx.lineTo(x-2,py);ctx.stroke();
+    }
+    // 高光
+    ctx.fillStyle='rgba(255,255,255,0.3)';
+    ctx.beginPath();ctx.ellipse(x-10,py-18,8,12,-0.3,0,Math.PI*2);ctx.fill();
+  }
+  else if(evolve==='baby'){
+    // 幼年 - 圆滚滚
+    const g=ctx.createRadialGradient(x-5,py-10,5,x,py,30);
+    g.addColorStop(0,'#FFE4B8');g.addColorStop(0.7,'#FFB347');g.addColorStop(1,'#FF8C00');
+    ctx.fillStyle=g;
+    ctx.beginPath();ctx.ellipse(x,py,25,28,0,0,Math.PI*2);ctx.fill();
+    // 耳朵
+    ctx.beginPath();ctx.ellipse(x-18,py-22,8,12,-.3,0,Math.PI*2);ctx.fill();
+    ctx.beginPath();ctx.ellipse(x+18,py-22,8,12,.3,0,Math.PI*2);ctx.fill();
+    // 眼睛
+    const blink=pet.blink>0?.1:1;
+    ctx.fillStyle='#333';
+    ctx.beginPath();ctx.ellipse(x-8,py-5,4,5*blink,0,0,Math.PI*2);ctx.fill();
+    ctx.beginPath();ctx.ellipse(x+8,py-5,4,5*blink,0,0,Math.PI*2);ctx.fill();
+    ctx.fillStyle='#fff';
+    ctx.beginPath();ctx.arc(x-6,py-7,2,0,Math.PI*2);ctx.fill();
+    ctx.beginPath();ctx.arc(x+10,py-7,2,0,Math.PI*2);ctx.fill();
+    // 腮红
+    ctx.fillStyle='rgba(255,150,150,0.3)';
+    ctx.beginPath();ctx.ellipse(x-20,py+2,6,4,0,0,Math.PI*2);ctx.fill();
+    ctx.beginPath();ctx.ellipse(x+20,py+2,6,4,0,0,Math.PI*2);ctx.fill();
+    // 嘴
+    ctx.strokeStyle='#B07030';ctx.lineWidth=1.5;
+    ctx.beginPath();ctx.arc(x,py+5,4,.2,Math.PI-.2);ctx.stroke();
+  }
+  else if(evolve==='cat'){
+    drawCat(x,py,st,fr);
+  }
+  else if(evolve==='dog'){
+    drawDog(x,py,st,fr);
+  }
+  else if(evolve==='rabbit'){
+    drawRabbit(x,py,st,fr);
+  }
+  
+  // 表情
+  if(pet.emoTick>0){
+    ctx.globalAlpha=Math.min(1,pet.emoTick/15);
+    ctx.font='20px sans-serif';
+    ctx.fillText(pet.emotion,x+25,py-30);
+    ctx.globalAlpha=1;
+  }
+}
+
+function drawCat(x,y,st,fr){
+  // 身体
+  const g=ctx.createRadialGradient(x-5,y-10,5,x,y,32);
+  g.addColorStop(0,'#FFE4B8');g.addColorStop(0.6,'#F0A050');g.addColorStop(1,'#D08030');
+  ctx.fillStyle=g;
+  ctx.beginPath();ctx.ellipse(x,y,28,30,0,0,Math.PI*2);ctx.fill();
+  // 耳朵
+  ctx.fillStyle='#F0A050';
+  ctx.beginPath();ctx.ellipse(x-20,y-25,8,14,-.3,0,Math.PI*2);ctx.fill();
+  ctx.beginPath();ctx.ellipse(x+20,y-25,8,14,.3,0,Math.PI*2);ctx.fill();
+  ctx.fillStyle='#FFB870';
+  ctx.beginPath();ctx.ellipse(x-20,y-23,5,8,-.3,0,Math.PI*2);ctx.fill();
+  ctx.beginPath();ctx.ellipse(x+20,y-23,5,8,.3,0,Math.PI*2);ctx.fill();
+  // 脸部
+  if(st==='sleep'){
+    ctx.strokeStyle='#333';ctx.lineWidth=2;
+    ctx.beginPath();ctx.arc(x-8,y-5,4,0,Math.PI);ctx.stroke();
+    ctx.beginPath();ctx.arc(x+8,y-5,4,0,Math.PI);ctx.stroke();
+    // Zzz
+    ctx.font='14px sans-serif';ctx.fillStyle='rgba(255,255,255,0.6)';
+    ctx.fillText('z',x+20+Math.sin(Date.now()/500)*5,y-30+Math.cos(Date.now()/800)*3);
+    ctx.font='10px sans-serif';
+    ctx.fillText('z',x+30+Math.sin(Date.now()/600)*4,y-40+Math.cos(Date.now()/700)*3);
+  }else{
+    // 眼睛
+    const blink=pet.blink>0?.1:1;
+    ctx.fillStyle='#333';
+    ctx.beginPath();ctx.ellipse(x-10,y-5,4.5,5.5*blink,0,0,Math.PI*2);ctx.fill();
+    ctx.beginPath();ctx.ellipse(x+10,y-5,4.5,5.5*blink,0,0,Math.PI*2);ctx.fill();
+    ctx.fillStyle='#fff';
+    ctx.beginPath();ctx.arc(x-8,y-7,2,0,Math.PI*2);ctx.fill();
+    ctx.beginPath();ctx.arc(x+12,y-7,2,0,Math.PI*2);ctx.fill();
+    // 腮红
+    ctx.fillStyle='rgba(255,150,150,0.3)';
+    ctx.beginPath();ctx.ellipse(x-22,y+2,7,4,0,0,Math.PI*2);ctx.fill();
+    ctx.beginPath();ctx.ellipse(x+22,y+2,7,4,0,0,Math.PI*2);ctx.fill();
+    // 嘴
+    if(st==='eat'){
+      ctx.fillStyle='#C06030';
+      ctx.beginPath();ctx.ellipse(x,y+8,5,4,0,0,Math.PI*2);ctx.fill();
+    }else if(st==='happy'){
+      ctx.strokeStyle='#B07030';ctx.lineWidth=2;
+      ctx.beginPath();ctx.arc(x,y+3,6,.1,Math.PI-.1);ctx.stroke();
+    }else{
+      ctx.strokeStyle='#B07030';ctx.lineWidth=1.5;
+      ctx.beginPath();ctx.arc(x,y+5,4,.2,Math.PI-.2);ctx.stroke();
+    }
+  }
+  // 尾巴
+  const tailWag=Math.sin(Date.now()/300)*.3;
+  ctx.strokeStyle='#F0A050';ctx.lineWidth=5;ctx.lineCap='round';
+  ctx.beginPath();ctx.moveTo(x-25,y+10);
+  ctx.quadraticCurveTo(x-35,y-5+Math.sin(tailWag)*10,x-30,y-20+Math.sin(tailWag)*8);
+  ctx.stroke();
+  // 小手
+  const armSwing=st==='happy'?Math.sin(Date.now()/100)*.4:0;
+  ctx.fillStyle='#F0A050';
+  ctx.beginPath();ctx.ellipse(x-22,y+12+armSwing*5,6,5,-.3+armSwing,0,Math.PI*2);ctx.fill();
+  ctx.beginPath();ctx.ellipse(x+22,y+12-armSwing*5,6,5,.3-armSwing,0,Math.PI*2);ctx.fill();
+}
+
+function drawDog(x,y,st,fr){
+  // 身体
+  const g=ctx.createRadialGradient(x-5,y-10,5,x,y,32);
+  g.addColorStop(0,'#F5E6D0');g.addColorStop(0.6,'#D4A574');g.addColorStop(1,'#B8834A');
+  ctx.fillStyle=g;
+  ctx.beginPath();ctx.ellipse(x,y,28,30,0,0,Math.PI*2);ctx.fill();
+  // 耳朵（下垂）
+  ctx.fillStyle='#B8834A';
+  ctx.beginPath();ctx.ellipse(x-24,y-8,10,18,.3,0,Math.PI*2);ctx.fill();
+  ctx.beginPath();ctx.ellipse(x+24,y-8,10,18,-.3,0,Math.PI*2);ctx.fill();
+  // 鼻子
+  ctx.fillStyle='#333';
+  ctx.beginPath();ctx.ellipse(x,y+2,5,4,0,0,Math.PI*2);ctx.fill();
+  // 眼睛
+  const blink=pet.blink>0?.1:1;
+  ctx.fillStyle='#333';
+  ctx.beginPath();ctx.ellipse(x-10,y-8,4,5*blink,0,0,Math.PI*2);ctx.fill();
+  ctx.beginPath();ctx.ellipse(x+10,y-8,4,5*blink,0,0,Math.PI*2);ctx.fill();
+  ctx.fillStyle='#fff';
+  ctx.beginPath();ctx.arc(x-8,y-10,2,0,Math.PI*2);ctx.fill();
+  ctx.beginPath();ctx.arc(x+12,y-10,2,0,Math.PI*2);ctx.fill();
+  // 舌头
+  if(st==='happy'||st==='eat'){
+    ctx.fillStyle='#FF6B8A';
+    ctx.beginPath();ctx.ellipse(x,y+12,4,6+Math.sin(Date.now()/200)*2,0,0,Math.PI*2);ctx.fill();
+  }
+  // 腮红
+  ctx.fillStyle='rgba(255,150,150,0.25)';
+  ctx.beginPath();ctx.ellipse(x-20,y,6,4,0,0,Math.PI*2);ctx.fill();
+  ctx.beginPath();ctx.ellipse(x+20,y,6,4,0,0,Math.PI*2);ctx.fill();
+  // 尾巴（摇摆）
+  const tail=Math.sin(Date.now()/150)*.5;
+  ctx.strokeStyle='#B8834A';ctx.lineWidth=5;ctx.lineCap='round';
+  ctx.beginPath();ctx.moveTo(x-25,y+10);
+  ctx.quadraticCurveTo(x-40,y+Math.sin(tail)*15,x-35,y-15+Math.sin(tail)*10);
+  ctx.stroke();
+}
+
+function drawRabbit(x,y,st,fr){
+  // 身体
+  const g=ctx.createRadialGradient(x-5,y-10,5,x,y,30);
+  g.addColorStop(0,'#FFE4E1');g.addColorStop(0.6,'#FFB6C1');g.addColorStop(1,'#FF69B4');
+  ctx.fillStyle=g;
+  ctx.beginPath();ctx.ellipse(x,y,25,28,0,0,Math.PI*2);ctx.fill();
+  // 长耳朵
+  ctx.fillStyle='#FFB6C1';
+  ctx.beginPath();ctx.ellipse(x-12,y-40,7,22,-.1,0,Math.PI*2);ctx.fill();
+  ctx.beginPath();ctx.ellipse(x+12,y-40,7,22,.1,0,Math.PI*2);ctx.fill();
+  ctx.fillStyle='#FF69B4';
+  ctx.beginPath();ctx.ellipse(x-12,y-38,4,15,-.1,0,Math.PI*2);ctx.fill();
+  ctx.beginPath();ctx.ellipse(x+12,y-38,4,15,.1,0,Math.PI*2);ctx.fill();
+  // 耳朵随动作摆动
+  const earWig=Math.sin(Date.now()/400)*.05;
+  // 眼睛
+  const blink=pet.blink>0?.1:1;
+  ctx.fillStyle='#333';
+  ctx.beginPath();ctx.ellipse(x-8,y-5,4,5*blink,0,0,Math.PI*2);ctx.fill();
+  ctx.beginPath();ctx.ellipse(x+8,y-5,4,5*blink,0,0,Math.PI*2);ctx.fill();
+  ctx.fillStyle='#fff';
+  ctx.beginPath();ctx.arc(x-6,y-7,2,0,Math.PI*2);ctx.fill();
+  ctx.beginPath();ctx.arc(x+10,y-7,2,0,Math.PI*2);ctx.fill();
+  // 腮红
+  ctx.fillStyle='rgba(255,100,150,0.3)';
+  ctx.beginPath();ctx.ellipse(x-18,y+2,6,4,0,0,Math.PI*2);ctx.fill();
+  ctx.beginPath();ctx.ellipse(x+18,y+2,6,4,0,0,Math.PI*2);ctx.fill();
+  // 嘴
+  ctx.strokeStyle='#C06080';ctx.lineWidth=1.5;
+  ctx.beginPath();ctx.arc(x,y+5,3,.2,Math.PI-.2);ctx.stroke();
+  // 小尾巴
+  ctx.fillStyle='#fff';
+  ctx.beginPath();ctx.arc(x-22,y+15,6,0,Math.PI*2);ctx.fill();
+}
+
+// ===== 状态条 =====
+function drawBars(){
+  const bars=[
+    {l:'❤️',v:S.hunger,c:'#FF6B6B'},
+    {l:'😊',v:S.happy,c:'#FFD700'},
+    {l:'⚡',v:S.energy,c:'#4ECDC4'},
+    {l:'🧹',v:S.clean,c:'#80C8FF'},
+  ];
+  bars.forEach((b,i)=>{
+    const bx=10,by=10+i*20,bw=80,bh=8;
+    ctx.fillStyle='rgba(255,255,255,0.1)';
+    ctx.beginPath();ctx.roundRect(bx+18,by+4,bw,bh,4);ctx.fill();
+    const g=ctx.createLinearGradient(bx+18,0,bx+18+bw*b.v/100,0);
+    g.addColorStop(0,b.c);g.addColorStop(1,b.c+'88');
+    ctx.fillStyle=g;
+    ctx.beginPath();ctx.roundRect(bx+18,by+4,bw*b.v/100,bh,4);ctx.fill();
+    ctx.font='11px sans-serif';ctx.fillStyle='rgba(255,255,255,0.8)';
+    ctx.fillText(b.l,bx+2,by+13);
+    ctx.fillText(Math.round(b.v)+'%',bx+102,by+13);
+  });
+  // 等级/金币
+  ctx.font='11px sans-serif';ctx.fillStyle='#FFD700';
+  ctx.fillText('🪙'+S.coins,W-70,22);
+  ctx.fillStyle='#AAF';
+  ctx.fillText('⭐Lv.'+S.level,W-70,38);
+  // 年龄
+  ctx.fillStyle='rgba(255,255,255,0.5)';
+  ctx.fillText('Age: '+Math.floor(S.age/60)+'m',W-70,54);
+}
+
+// ===== 粒子绘制 =====
+function drawParticles(){
+  particles.forEach(p=>{
+    ctx.globalAlpha=p.life;
+    ctx.save();
+    ctx.translate(p.x,p.y);
+    ctx.rotate(p.rot);
+    const s=p.size;
+    if(p.type==='heart'){
+      ctx.fillStyle='#FF6B8A';
+      ctx.beginPath();ctx.moveTo(0,-s*.3);
+      ctx.bezierCurveTo(-s,-s,-s,0,0,s*.5);
+      ctx.bezierCurveTo(s,0,s,-s,0,-s*.3);
+      ctx.fill();
+    }else if(p.type==='star'){
+      ctx.fillStyle='#FFD700';
+      ctx.beginPath();
+      for(let i=0;i<5;i++){
+        const a=i*Math.PI*2/5-Math.PI/2;
+        const r=i%2===0?s:s*.4;
+        ctx.lineTo(Math.cos(a)*r,Math.sin(a)*r);
+        const a2=a+Math.PI/5;
+        ctx.lineTo(Math.cos(a2)*s*.4,Math.sin(a2)*s*.4);
+      }
+      ctx.closePath();ctx.fill();
+    }else if(p.type==='sparkle'){
+      ctx.fillStyle='rgba(255,255,255,0.8)';
+      ctx.beginPath();ctx.arc(0,0,s*.3,0,Math.PI*2);ctx.fill();
+    }else if(p.type==='drop'){
+      ctx.fillStyle='#80C8FF';
+      ctx.beginPath();ctx.ellipse(0,0,s*.3,s*.5,0,0,Math.PI*2);ctx.fill();
+    }else if(p.type==='steam'){
+      ctx.fillStyle='rgba(200,200,200,0.5)';
+      ctx.beginPath();ctx.arc(0,0,s*.4,0,Math.PI*2);ctx.fill();
+    }else{
+      ctx.fillStyle='#FFD700';
+      ctx.beginPath();ctx.arc(0,0,s*.3,0,Math.PI*2);ctx.fill();
+    }
+    ctx.restore();
+    ctx.globalAlpha=1;
+  });
+}
+
+// ===== 通知 =====
+let notif='',notifTick=0;
+function showNotif(t){notif=t;notifTick=120}
+function drawNotif(){
+  if(notifTick<=0)return;
+  notifTick--;
+  ctx.globalAlpha=Math.min(1,notifTick/15);
+  ctx.fillStyle='rgba(0,0,0,0.6)';
+  const tw=ctx.measureText(notif).width;
+  ctx.beginPath();ctx.roundRect(W/2-tw/2-12,H-40,tw+24,24,12);ctx.fill();
+  ctx.font='12px sans-serif';ctx.fillStyle='#fff';ctx.textAlign='center';
+  ctx.fillText(notif,W/2,H-23);
+  ctx.textAlign='left';ctx.globalAlpha=1;
+}
+
+// ===== 交互 =====
+function doAction(act){
+  switch(act){
+    case'feed':
+      if(pet.evolve==='egg'){showNotif('先点击蛋孵化！');return}
+      S.hunger=Math.min(100,S.hunger+20);S.coins+=2;
+      pet.state='eat';setTimeout(()=>pet.state='idle',2000);
+      emit(pet.x,pet.y-20,'heart',5);
+      showNotif('🍖 喂食了！+20饱食');
+      break;
+    case'play':
+      if(pet.evolve==='egg'){showNotif('先点击蛋孵化！');return}
+      if(S.energy<10){showNotif('😴 太累了！');return}
+      S.happy=Math.min(100,S.happy+25);S.energy=Math.max(0,S.energy-10);S.coins+=3;
+      pet.state='happy';setTimeout(()=>pet.state='idle',2500);
+      emit(pet.x,pet.y-30,'star',8);
+      showNotif('🎾 玩耍！+25心情');
+      break;
+    case'sleep':
+      if(pet.evolve==='egg'){showNotif('先点击蛋孵化！');return}
+      S.energy=Math.min(100,S.energy+35);
+      pet.state='sleep';setTimeout(()=>pet.state='idle',3000);
+      emit(pet.x,pet.y-20,'sparkle',4);
+      showNotif('💤 睡觉了...+35体力');
+      break;
+    case'clean':
+      if(pet.evolve==='egg'){showNotif('先点击蛋孵化！');return}
+      S.clean=Math.min(100,S.clean+30);S.coins+=1;
+      emit(pet.x,pet.y-20,'drop',8);
+      showNotif('🫧 洗干净了！+30清洁');
+      break;
+  }
+}
+
+// 点击孵化/互动
+canvas.addEventListener('click',e=>{
+  const r=canvas.getBoundingClientRect();
+  const mx=(e.clientX-r.left)*(W/r.width);
+  const my=(e.clientY-r.top)*(H/r.height);
+  
+  if(pet.evolve==='egg'){
+    pet.evolveTimer+=30;
+    emit(pet.x,pet.y,'sparkle',3);
+    if(pet.evolveTimer>=100){
+      pet.evolve='baby';
+      emit(pet.x,pet.y,'star',12);
+      showNotif('🐣 孵化了！');
+      // 30秒后进化
+      setTimeout(()=>{
+        pet.evolve='cat';
+        emit(pet.x,pet.y,'star',15);
+        showNotif('🐱 进化成猫咪！');S.level=2;
+      },30000);
+    }
+    return;
+  }
+  
+  // 摸宠物
+  const dx=mx-pet.x,dy=my-pet.y;
+  if(dx*dx+dy*dy<1600){
+    S.happy=Math.min(100,S.happy+5);
+    pet.emoTick=60;
+    pet.emotion=['💕','😊','✨','🧡'][Math.floor(Math.random()*4)];
+    emit(pet.x,pet.y-20,'heart',3);
+  }
+});
+
+// ===== 主循环 =====
+function update(){
+  S.tick++;
+  // 属性衰减
+  S.hunger=Math.max(0,S.hunger-.08);
+  S.happy=Math.max(0,S.happy-.05);
+  S.energy=Math.max(0,S.energy-.03);
+  S.clean=Math.max(0,S.clean-.02);
+  S.age+=1/60;
+  
+  // 眨眼
+  if(S.tick%180===0){pet.blink=8}
+  if(pet.blink>0)pet.blink--;
+  
+  // 表情
+  if(pet.emoTick>0)pet.emoTick--;
+  
+  // 粒子更新
+  for(let i=particles.length-1;i>=0;i--){
+    const p=particles[i];
+    p.x+=p.vx;p.y+=p.vy;p.vy+=.03;p.life-=p.decay;p.rot+=.02;
+    if(p.life<=0)particles.splice(i,1);
+  }
+  
+  // 进化动画
+  if(pet.evolve==='egg'&&pet.evolveTimer>0){
+    pet.evolveTimer=Math.max(0,pet.evolveTimer-1);
+  }
+}
+
+function frame(){
+  ctx.clearRect(0,0,W,H);
+  
+  // 背景渐变
+  const bg=ctx.createLinearGradient(0,0,0,H);
+  bg.addColorStop(0,'#0a0a2a');bg.addColorStop(0.5,'#111138');bg.addColorStop(1,'#0a0a1a');
+  ctx.fillStyle=bg;ctx.fillRect(0,0,W,H);
+  
+  // 背景星星
+  ctx.fillStyle='rgba(255,255,255,0.15)';
+  for(let i=0;i<20;i++){
+    const sx=(i*137+50)%W,sy=(i*89+30)%(H-60);
+    const sr=.5+Math.sin(Date.now()/1000+i)*.5;
+    ctx.beginPath();ctx.arc(sx,sy,sr,0,Math.PI*2);ctx.fill();
+  }
+  
+  drawPet();
+  drawParticles();
+  drawBars();
+  drawNotif();
+  update();
+  requestAnimationFrame(frame);
+}
+
+// 初始提示
+showNotif('🥚 点击蛋开始孵化！');
+frame();
+</script>
+</body>
+</html>
